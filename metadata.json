@@ -1,0 +1,6 @@
+{
+  "name": "Zaika - Restaurant Menu & WhatsApp Ordering",
+  "description": "Direct digital menu and WhatsApp ordering platform for your restaurant with zero login required, dine-in table QR codes, takeaway & delivery modes, and live menu management.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
