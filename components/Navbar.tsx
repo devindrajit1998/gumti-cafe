@@ -32,7 +32,21 @@ export const Navbar: React.FC = () => {
   } = useApp();
 
   const [isOrderModeOpen, setIsOrderModeOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const orderModeRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 20) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -47,7 +61,7 @@ export const Navbar: React.FC = () => {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigateTo('home', { query: searchQuery.trim() });
+      navigateTo('search', { query: searchQuery.trim() });
     }
   };
 
@@ -74,7 +88,7 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-[#FFFDF9] border-b border-[#E9C5A7] shadow-xs">
+    <header className="sticky top-0 z-50 bg-[#FFFDF9]/95 backdrop-blur-md border-b border-[#E9C5A7] shadow-xs transition-all duration-300">
       {/* 1. Thin Top Utility Banner */}
       <div className="bg-[#3D1020] text-[#F8D6B2] text-xs font-medium py-1.5 px-4 sm:px-6 lg:px-8 border-b border-[#6A2940]">
         <div className="max-w-[1440px] mx-auto flex items-center justify-between">
@@ -108,37 +122,45 @@ export const Navbar: React.FC = () => {
 
       {/* 2. Main Navigation Bar (1440px Max Width Centered) */}
       <div className="w-full px-4 sm:px-6 lg:px-8">
-        <div className="max-w-[1440px] mx-auto flex items-center justify-between h-16 sm:h-20 gap-3 sm:gap-6">
+        <div className="max-w-[1440px] mx-auto flex items-center justify-between h-16 sm:h-18 gap-3 sm:gap-6 relative">
 
-          {/* Brand Logo & Elegant Wordmark */}
-          <button
-            onClick={() => navigateTo('home')}
-            className="flex items-center gap-3.5 text-left shrink-0 cursor-pointer focus:outline-none py-1 group"
-            title={restaurantProfile.name}
-          >
-            {/* Logo in a clean circular card with warm shadow matching header */}
-            <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-[#FBE4CB] p-1 border-2 border-[#E9C5A7] shadow-sm flex items-center justify-center relative overflow-hidden shrink-0">
-              <Image
-                src={restaurantProfile.logoImage || '/logo-gumti.png'}
-                alt={restaurantProfile.name}
-                fill
-                className="object-contain p-0.5 rounded-full"
-                priority
-              />
-            </div>
+          {/* Half-Hanging Brand Logo & Text */}
+          <div className="relative shrink-0 flex items-center z-20">
+            <button
+              onClick={() => navigateTo('home')}
+              className="flex items-center gap-3 sm:gap-3.5 text-left focus:outline-none cursor-pointer group"
+              title={restaurantProfile.name}
+            >
+              {/* Logo emblem: larger and half-hanging when at top, neat & centered on scroll */}
+              <div
+                className={`rounded-full bg-[#FBE4CB] border-2 sm:border-3 border-[#E9C5A7] flex items-center justify-center relative overflow-hidden ring-4 ring-[#FFFDF9] shrink-0 transition-all duration-300 ease-out ${
+                  isScrolled
+                    ? 'w-12 h-12 sm:w-14 sm:h-14 shadow-md translate-y-0'
+                    : 'w-16 h-16 sm:w-20 sm:h-20 shadow-xl translate-y-2 sm:translate-y-3 group-hover:scale-105'
+                }`}
+              >
+                <Image
+                  src={restaurantProfile.logoImage || '/logo-gumti.png'}
+                  alt={restaurantProfile.name}
+                  fill
+                  className="object-cover rounded-full p-0.5"
+                  priority
+                />
+              </div>
 
-            {/* Premium Typography to complete the header branding */}
-            <div className="hidden min-[400px]:block">
-              <div className="flex items-center gap-1.5">
-                <span className="font-serif font-black text-lg sm:text-xl text-[#3D1020] tracking-tight leading-none">
-                  {restaurantProfile.name}
+              {/* Brand Typography */}
+              <div className="hidden min-[400px]:block transition-all duration-300">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-serif font-black text-lg sm:text-xl lg:text-2xl text-[#3D1020] tracking-tight leading-none">
+                    {restaurantProfile.name}
+                  </span>
+                </div>
+                <span className="text-[10px] sm:text-xs font-bold text-[#7C203A] tracking-wider block mt-1 uppercase">
+                  Artisan Cafe &amp; Kitchen
                 </span>
               </div>
-              <span className="text-[11px] font-bold text-[#7C203A] tracking-wider block mt-1 uppercase">
-                Artisan Cafe &amp; Kitchen
-              </span>
-            </div>
-          </button>
+            </button>
+          </div>
 
           {/* Large Center Search Bar */}
           <form

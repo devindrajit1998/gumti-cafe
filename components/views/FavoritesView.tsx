@@ -34,88 +34,105 @@ export const FavoritesView: React.FC = () => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {recommendedDishes.map((item) => {
-          const inCart = cart.find((c) => c.id === item.id);
-          const isAvailable = item.isAvailable !== false;
+      {recommendedDishes.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-3xl border border-zinc-200 p-6">
+          <div className="w-14 h-14 rounded-2xl bg-rose-50 text-rose-400 flex items-center justify-center mx-auto mb-3">
+            <Heart className="w-7 h-7" />
+          </div>
+          <h3 className="text-sm font-bold text-zinc-800">No favorites yet</h3>
+          <p className="text-xs text-zinc-500 mt-1 mb-4">
+            Browse the menu and tap the heart on any dish to save it here for quick ordering.
+          </p>
+          <button
+            onClick={() => navigateTo('home')}
+            className="px-4 py-2 bg-orange-600 text-white text-xs font-bold rounded-xl"
+          >
+            Browse Menu
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {recommendedDishes.map((item) => {
+            const inCart = cart.find((c) => c.id === item.id);
+            const isAvailable = item.isAvailable !== false;
 
-          return (
-            <div
-              key={item.id}
-              className="bg-white rounded-2xl p-4 border border-zinc-200 shadow-2xs hover:shadow-md transition-all flex gap-3.5 justify-between"
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span
-                    className={`w-2.5 h-2.5 rounded-full ${
-                      item.vegType === 'veg'
+            return (
+              <div
+                key={item.id}
+                className="bg-white rounded-2xl p-4 border border-zinc-200 shadow-2xs hover:shadow-md transition-all flex gap-3.5 justify-between"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span
+                      className={`w-2.5 h-2.5 rounded-full ${item.vegType === 'veg'
                         ? 'bg-emerald-500'
                         : item.vegType === 'egg'
-                        ? 'bg-amber-500'
-                        : 'bg-rose-500'
-                    }`}
+                          ? 'bg-amber-500'
+                          : 'bg-rose-500'
+                        }`}
+                    />
+                    <span className="text-[11px] font-bold text-zinc-500">{item.category}</span>
+                    <span className="text-[10px] bg-rose-50 text-rose-700 font-extrabold px-1.5 py-0.5 rounded">
+                      ⭐ {item.rating || 4.9}
+                    </span>
+                  </div>
+
+                  <h4 className="text-sm font-bold text-zinc-900 leading-snug">{item.name}</h4>
+                  <p className="text-xs text-zinc-500 mt-1 line-clamp-2 leading-relaxed">
+                    {item.description}
+                  </p>
+
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-sm font-black text-zinc-900">₹{item.price}</span>
+                    {item.originalPrice && item.originalPrice > item.price && (
+                      <span className="text-xs text-zinc-400 line-through">₹{item.originalPrice}</span>
+                    )}
+                    <span className="text-[10px] text-zinc-500">• {item.portionSize || 'Serves 1-2'}</span>
+                  </div>
+                </div>
+
+                <div className="w-24 shrink-0 flex flex-col items-center justify-between">
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="w-20 h-20 rounded-xl object-cover bg-zinc-100"
                   />
-                  <span className="text-[11px] font-bold text-zinc-500">{item.category}</span>
-                  <span className="text-[10px] bg-rose-50 text-rose-700 font-extrabold px-1.5 py-0.5 rounded">
-                    ⭐ {item.rating || 4.9}
-                  </span>
-                </div>
 
-                <h4 className="text-sm font-bold text-zinc-900 leading-snug">{item.name}</h4>
-                <p className="text-xs text-zinc-500 mt-1 line-clamp-2 leading-relaxed">
-                  {item.description}
-                </p>
-
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="text-sm font-black text-zinc-900">₹{item.price}</span>
-                  {item.originalPrice && item.originalPrice > item.price && (
-                    <span className="text-xs text-zinc-400 line-through">₹{item.originalPrice}</span>
-                  )}
-                  <span className="text-[10px] text-zinc-500">• {item.portionSize || 'Serves 1-2'}</span>
-                </div>
-              </div>
-
-              <div className="w-24 shrink-0 flex flex-col items-center justify-between">
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  className="w-20 h-20 rounded-xl object-cover bg-zinc-100"
-                />
-
-                {isAvailable ? (
-                  inCart ? (
-                    <div className="flex items-center bg-orange-600 text-white rounded-xl px-2 py-1 text-xs font-bold mt-2 shadow-xs">
+                  {isAvailable ? (
+                    inCart ? (
+                      <div className="flex items-center bg-orange-600 text-white rounded-xl px-2 py-1 text-xs font-bold mt-2 shadow-xs">
+                        <button
+                          onClick={() => updateCartQuantity(inCart.id, inCart.quantity - 1)}
+                          className="px-1 hover:text-orange-200"
+                        >
+                          -
+                        </button>
+                        <span className="px-2">{inCart.quantity}</span>
+                        <button
+                          onClick={() => updateCartQuantity(inCart.id, inCart.quantity + 1)}
+                          className="px-1 hover:text-orange-200"
+                        >
+                          +
+                        </button>
+                      </div>
+                    ) : (
                       <button
-                        onClick={() => updateCartQuantity(inCart.id, inCart.quantity - 1)}
-                        className="px-1 hover:text-orange-200"
+                        onClick={() => addToCart(item)}
+                        className="mt-2 w-full py-1 bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition-all shadow-2xs"
                       >
-                        -
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>ADD</span>
                       </button>
-                      <span className="px-2">{inCart.quantity}</span>
-                      <button
-                        onClick={() => updateCartQuantity(inCart.id, inCart.quantity + 1)}
-                        className="px-1 hover:text-orange-200"
-                      >
-                        +
-                      </button>
-                    </div>
+                    )
                   ) : (
-                    <button
-                      onClick={() => addToCart(item)}
-                      className="mt-2 w-full py-1 bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition-all shadow-2xs"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>ADD</span>
-                    </button>
-                  )
-                ) : (
-                  <span className="text-[10px] font-bold text-zinc-400 mt-2">Sold Out</span>
-                )}
+                    <span className="text-[10px] font-bold text-zinc-400 mt-2">Sold Out</span>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

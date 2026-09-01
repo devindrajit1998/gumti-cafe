@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 import { DeliveryAddress } from '@/lib/types';
 import { X, MapPin, Navigation, Home, Briefcase, Plus, Check } from 'lucide-react';
 
@@ -16,6 +17,7 @@ export const LocationModal: React.FC = () => {
     updateGuestCustomer,
     showToast,
   } = useApp();
+  const { modalRef } = useModalAccessibility(isLocationModalOpen, () => setIsLocationModalOpen(false));
 
   const [street, setStreet] = useState(guestCustomer.street || currentAddress.street || '');
   const [area, setArea] = useState(guestCustomer.area || currentAddress.area || restaurantProfile.locality);
@@ -44,7 +46,12 @@ export const LocationModal: React.FC = () => {
     >
       <div
         id="location-modal-content"
-        className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden p-6 text-zinc-900"
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Set delivery location"
+        tabIndex={-1}
+        className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden p-6 text-zinc-900 focus:outline-none"
       >
         <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
           <div className="flex items-center gap-2">

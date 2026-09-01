@@ -37,7 +37,10 @@ export const MobileBottomNav: React.FC = () => {
     <>
       {/* Floating AI Sommelier Quick Trigger on Mobile */}
       {!showFloatingCart && activeView !== 'cart' && activeView !== 'checkout' && (
-        <div className="md:hidden fixed bottom-18 right-4 z-40 animate-in fade-in slide-in-from-bottom-3 duration-300">
+        <div
+          className="md:hidden fixed right-4 z-40 animate-in fade-in slide-in-from-bottom-3 duration-300"
+          style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }}
+        >
           <button
             onClick={() => setIsAiAssistantOpen(true)}
             className="flex items-center gap-1.5 px-3.5 py-2 bg-[#1A1816] text-[#FAF9F5] rounded-full shadow-lg border border-[#2E2B27] active:scale-95 transition-all text-xs font-bold cursor-pointer"
@@ -52,7 +55,8 @@ export const MobileBottomNav: React.FC = () => {
       {showFloatingCart && (
         <div
           id="mobile-floating-cart"
-          className="md:hidden fixed bottom-18 left-3 right-3 z-40 animate-in slide-in-from-bottom duration-200"
+          className="md:hidden fixed left-3 right-3 z-40 animate-in slide-in-from-bottom duration-200"
+          style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }}
         >
           <button
             onClick={() => navigateTo('cart')}
@@ -80,7 +84,8 @@ export const MobileBottomNav: React.FC = () => {
       {/* App-like Fixed Bottom Navigation */}
       <nav
         id="mobile-bottom-nav"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/98 backdrop-blur-md border-t border-[#E8E5DD] shadow-[0_-2px_10px_rgba(0,0,0,0.03)] px-2 py-1.5"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/98 backdrop-blur-md border-t border-[#E8E5DD] shadow-[0_-2px_10px_rgba(0,0,0,0.03)] px-2 pt-1.5"
+        style={{ paddingBottom: 'calc(0.375rem + env(safe-area-inset-bottom))' }}
       >
         <div className="flex items-center justify-around">
           {navItems.map((item) => {
@@ -91,9 +96,8 @@ export const MobileBottomNav: React.FC = () => {
               <button
                 key={item.id}
                 onClick={() => navigateTo(item.id as ActiveView)}
-                className={`flex flex-col items-center justify-center py-1 px-3 relative rounded-lg transition-all cursor-pointer ${
-                  isActive ? 'text-[#E05315] font-bold' : 'text-[#7D7872] hover:text-[#1A1816] font-medium'
-                }`}
+                className={`flex flex-col items-center justify-center py-1 px-3 relative rounded-lg transition-all cursor-pointer ${isActive ? 'text-[#E05315] font-bold' : 'text-[#7D7872] hover:text-[#1A1816] font-medium'
+                  }`}
               >
                 <div className="relative">
                   <Icon className={`w-4 h-4 transition-transform ${isActive ? 'scale-110 stroke-[2.2]' : 'stroke-[1.6]'}`} />
@@ -104,9 +108,8 @@ export const MobileBottomNav: React.FC = () => {
                   )}
                 </div>
                 <span
-                  className={`text-[10px] tracking-tight mt-1 ${
-                    isActive ? 'font-bold text-[#E05315]' : 'text-[#7D7872]'
-                  }`}
+                  className={`text-[10px] tracking-tight mt-1 ${isActive ? 'font-bold text-[#E05315]' : 'text-[#7D7872]'
+                    }`}
                 >
                   {item.label}
                 </span>

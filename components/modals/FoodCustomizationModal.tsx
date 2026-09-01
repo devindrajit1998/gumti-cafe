@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 import { VegBadge } from '@/components/ui/VegBadge';
 import { MenuItem, FoodCustomizationOption, CartItemCustomization } from '@/lib/types';
 import { X, Plus, Minus, Check } from 'lucide-react';
@@ -10,9 +11,10 @@ import Image from 'next/image';
 interface InnerProps {
   item: MenuItem;
   onClose: () => void;
+  modalRef: React.RefObject<HTMLDivElement | null>;
 }
 
-const FoodCustomizationModalInner: React.FC<InnerProps> = ({ item, onClose }) => {
+const FoodCustomizationModalInner: React.FC<InnerProps> = ({ item, onClose, modalRef }) => {
   const { addToCart } = useApp();
 
   const [quantity, setQuantity] = useState(1);
@@ -81,7 +83,12 @@ const FoodCustomizationModalInner: React.FC<InnerProps> = ({ item, onClose }) =>
     >
       <div
         id="customization-modal-content"
-        className="bg-white w-full md:max-w-lg rounded-t-3xl md:rounded-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-250"
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Customize ${item.name}`}
+        tabIndex={-1}
+        className="bg-white w-full md:max-w-lg rounded-t-3xl md:rounded-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-250 focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -144,11 +151,10 @@ const FoodCustomizationModalInner: React.FC<InnerProps> = ({ item, onClose }) =>
                       return (
                         <label
                           key={option.id}
-                          className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
-                            isSelected
-                              ? 'border-orange-500 bg-orange-50/40'
-                              : 'border-zinc-200 hover:border-zinc-300 bg-white'
-                          }`}
+                          className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${isSelected
+                            ? 'border-orange-500 bg-orange-50/40'
+                            : 'border-zinc-200 hover:border-zinc-300 bg-white'
+                            }`}
                           onClick={(e) => {
                             e.preventDefault();
                             if (group.type === 'radio') {
@@ -160,9 +166,8 @@ const FoodCustomizationModalInner: React.FC<InnerProps> = ({ item, onClose }) =>
                         >
                           <div className="flex items-center gap-3">
                             <div
-                              className={`w-4 h-4 rounded-${group.type === 'radio' ? 'full' : 'md'} border flex items-center justify-center transition-colors ${
-                                isSelected ? 'border-orange-600 bg-orange-600 text-white' : 'border-zinc-300 bg-white'
-                              }`}
+                              className={`w-4 h-4 rounded-${group.type === 'radio' ? 'full' : 'md'} border flex items-center justify-center transition-colors ${isSelected ? 'border-orange-600 bg-orange-600 text-white' : 'border-zinc-300 bg-white'
+                                }`}
                             >
                               {isSelected && (
                                 <Check className="w-3 h-3 stroke-[3]" />
@@ -241,6 +246,7 @@ const FoodCustomizationModalInner: React.FC<InnerProps> = ({ item, onClose }) =>
 
 export const FoodCustomizationModal: React.FC = () => {
   const { customizingItem, setCustomizingItem } = useApp();
+  const { modalRef } = useModalAccessibility(Boolean(customizingItem), () => setCustomizingItem(null));
 
   if (!customizingItem) return null;
 
@@ -249,6 +255,7 @@ export const FoodCustomizationModal: React.FC = () => {
       key={customizingItem.id}
       item={customizingItem}
       onClose={() => setCustomizingItem(null)}
+      modalRef={modalRef}
     />
   );
 };

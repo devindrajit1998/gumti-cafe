@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 import {
   Printer,
   X,
@@ -19,6 +20,7 @@ import {
 
 export const KitchenKOTModal: React.FC = () => {
   const { isKOTModalOpen, setIsKOTModalOpen, activeOrder, viewingInvoiceOrder } = useApp();
+  const { modalRef } = useModalAccessibility(isKOTModalOpen, () => setIsKOTModalOpen(false));
   const order = viewingInvoiceOrder || activeOrder;
 
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
@@ -35,7 +37,14 @@ export const KitchenKOTModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-zinc-200 overflow-hidden flex flex-col max-h-[90vh]">
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Kitchen order ticket"
+        tabIndex={-1}
+        className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-zinc-200 overflow-hidden flex flex-col max-h-[90vh] focus:outline-none"
+      >
         {/* Header Bar */}
         <div className="p-4 bg-zinc-900 text-white flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -120,11 +129,10 @@ export const KitchenKOTModal: React.FC = () => {
                 <div
                   key={it.id || idx}
                   onClick={() => toggleCheck(it.id || idx.toString())}
-                  className={`p-2.5 rounded-xl border cursor-pointer transition-all ${
-                    isChecked
+                  className={`p-2.5 rounded-xl border cursor-pointer transition-all ${isChecked
                       ? 'bg-emerald-50/70 border-emerald-300 line-through text-zinc-400'
                       : 'bg-white border-zinc-200 hover:border-zinc-300 text-zinc-900'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-start gap-2">

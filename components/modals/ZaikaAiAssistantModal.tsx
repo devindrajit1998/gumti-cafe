@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 import { RESTAURANTS, ALL_MENU_ITEMS } from '@/lib/data';
 import {
   Sparkles,
@@ -53,6 +54,7 @@ export const ZaikaAiAssistantModal: React.FC = () => {
     navigateTo,
     showToast,
   } = useApp();
+  const { modalRef } = useModalAccessibility(isAiAssistantOpen, () => setIsAiAssistantOpen(false));
 
   const [prompt, setPrompt] = useState('');
   const [diet, setDiet] = useState<string>('any');
@@ -143,7 +145,14 @@ export const ZaikaAiAssistantModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-zinc-200 overflow-hidden flex flex-col max-h-[90vh]">
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="AI food sommelier"
+        tabIndex={-1}
+        className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-zinc-200 overflow-hidden flex flex-col max-h-[90vh] focus:outline-none"
+      >
         {/* Header */}
         <div className="p-5 sm:p-6 bg-linear-to-r from-orange-600 via-amber-600 to-orange-700 text-white relative flex items-start justify-between">
           <div className="flex items-center gap-3">
@@ -220,9 +229,8 @@ export const ZaikaAiAssistantModal: React.FC = () => {
                     key={d.id}
                     type="button"
                     onClick={() => setDiet(d.id)}
-                    className={`flex-1 py-1 text-[11px] font-bold rounded-lg transition-all ${
-                      diet === d.id ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-500 hover:text-zinc-900'
-                    }`}
+                    className={`flex-1 py-1 text-[11px] font-bold rounded-lg transition-all ${diet === d.id ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-500 hover:text-zinc-900'
+                      }`}
                   >
                     {d.label}
                   </button>
@@ -238,9 +246,8 @@ export const ZaikaAiAssistantModal: React.FC = () => {
                     key={b}
                     type="button"
                     onClick={() => setBudget(b)}
-                    className={`flex-1 py-1 text-[11px] font-bold rounded-lg transition-all ${
-                      budget === b ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-500 hover:text-zinc-900'
-                    }`}
+                    className={`flex-1 py-1 text-[11px] font-bold rounded-lg transition-all ${budget === b ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-500 hover:text-zinc-900'
+                      }`}
                   >
                     ₹{b}
                   </button>
@@ -260,9 +267,8 @@ export const ZaikaAiAssistantModal: React.FC = () => {
                     key={p.id}
                     type="button"
                     onClick={() => setPartySize(p.id)}
-                    className={`flex-1 py-1 text-[11px] font-bold rounded-lg transition-all ${
-                      partySize === p.id ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-500 hover:text-zinc-900'
-                    }`}
+                    className={`flex-1 py-1 text-[11px] font-bold rounded-lg transition-all ${partySize === p.id ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-500 hover:text-zinc-900'
+                      }`}
                   >
                     {p.label}
                   </button>

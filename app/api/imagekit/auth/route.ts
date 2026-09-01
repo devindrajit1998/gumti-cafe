@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getImageKitInstance } from '@/lib/imagekit';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const imagekit = getImageKitInstance();

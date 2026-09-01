@@ -2,6 +2,8 @@ import { GoogleGenAI } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
 import { RESTAURANTS } from '@/lib/data';
 
+export const dynamic = 'force-dynamic';
+
 // Simplified catalog for Gemini context
 const menuCatalog = RESTAURANTS.map((r) => ({
   restaurantId: r.id,

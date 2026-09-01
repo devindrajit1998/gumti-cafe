@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 import {
   Users,
   X,
@@ -28,6 +29,7 @@ export const GroupOrderModal: React.FC = () => {
     cart,
     showToast,
   } = useApp();
+  const { modalRef } = useModalAccessibility(isGroupOrderModalOpen, () => setIsGroupOrderModalOpen(false));
 
   const [inputCode, setInputCode] = useState('');
   const [inputName, setInputName] = useState('');
@@ -61,7 +63,14 @@ export const GroupOrderModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-zinc-200 overflow-hidden flex flex-col max-h-[90vh]">
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Group ordering"
+        tabIndex={-1}
+        className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-zinc-200 overflow-hidden flex flex-col max-h-[90vh] focus:outline-none"
+      >
         {/* Header */}
         <div className="p-5 sm:p-6 bg-linear-to-r from-blue-700 via-indigo-700 to-blue-900 text-white relative flex items-start justify-between">
           <div className="flex items-center gap-3">

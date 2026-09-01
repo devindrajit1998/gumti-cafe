@@ -1,34 +1,22 @@
 'use client';
 
-import React, { useState, useMemo, useRef } from 'react';
-import Image from 'next/image';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import {
   Clock,
   Phone,
   MessageCircle,
-  Plus,
-  Minus,
-  Check,
   Flame,
   Star,
-  Share2,
-  QrCode,
-  Store,
   ChevronRight,
-  ShieldCheck,
-  Search,
   Sparkles,
   ShoppingBag,
-  Heart,
   SlidersHorizontal,
   ChevronLeft,
   ChevronDown,
   X,
-  CheckCircle2,
   Tag,
   ArrowRight,
-  Percent,
 } from 'lucide-react';
 import { MenuItem } from '@/lib/types';
 import { generateWhatsAppUrl } from '@/lib/whatsapp';
@@ -48,51 +36,6 @@ const CATEGORY_IMAGES: Record<string, string> = {
 };
 const CATEGORY_ICONS: Record<string, string> = { Coffee: '☕', Tea: '🍵', Burger: '🍔', Sandwich: '🥪', Pizzas: '🍕', Momo: '🥟', 'Noodles / Combos': '🍜', 'Small Bites': '🍢', 'Mutton Magic on Your Plate': '🍖', Soup: '🥣', 'Shake / Coolers': '🍹' };
 
-// Cinematic Hero Banner Slides
-const HERO_SLIDES = [
-  {
-    id: 'biryani',
-    tag: '★★★★★ 4.9 · 1,200+ RATINGS',
-    cuisineTag: 'Coffee, chai & comfort food',
-    title: 'gumti cafe',
-    subtitle: 'Good food. Good adda.',
-    description: 'Fresh coffee, chai, quick bites and full plates made for everyday café moments.',
-    image: 'https://images.unsplash.com/photo-1589302168068-964664d93dc0?q=85&w=1600&auto=format&fit=crop',
-    badgeText: '👑 Signature Dum Biryani',
-    rating: '4.9',
-    prepTime: '25–35 min',
-    cost: '₹300 for two',
-    distance: '1.2 km',
-  },
-  {
-    id: 'kebabs',
-    tag: '🔥 CHEF SIGNATURE SIZZLERS',
-    cuisineTag: 'Overnight Marinated Charcoal Grill',
-    title: 'Royal Tandoori',
-    subtitle: 'Murgh & Kebabs',
-    description: 'Tender boneless chicken & lamb slow-grilled over live aromatic coals with 32 royal spices.',
-    image: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?q=85&w=1600&auto=format&fit=crop',
-    badgeText: '🍢 Charcoal Smoked',
-    rating: '4.8',
-    prepTime: '20–25 min',
-    cost: '₹350 for two',
-    distance: '1.2 km',
-  },
-  {
-    id: 'curries',
-    tag: '🥘 OLD DELHI HERITAGE GRAVIES',
-    cuisineTag: 'Slow Simmered in Desi Butter',
-    title: 'Paneer Butter',
-    subtitle: '& Dal Makhani',
-    description: 'Silky 24-hour slow cooked black lentils and velvety tomato-cashew makhani gravies.',
-    image: 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?q=85&w=1600&auto=format&fit=crop',
-    badgeText: '🧈 Pure Desi Ghee',
-    rating: '4.9',
-    prepTime: '20–30 min',
-    cost: '₹280 for two',
-    distance: '1.2 km',
-  },
-];
 
 export const HomeView: React.FC = () => {
   const {
@@ -126,7 +69,88 @@ export const HomeView: React.FC = () => {
 
   const [dietFilter, setDietFilter] = useState<'all' | 'veg' | 'non-veg' | 'spicy' | 'rating'>('all');
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
   const categorySliderRef = useRef<HTMLDivElement>(null);
+  const seededDefaultsRef = useRef(false);
+
+  // Collapse all menu categories by default except the first one (seeded once menu data loads).
+  // Keeps the page short; users can still expand individual categories or use Collapse/Expand All.
+  useEffect(() => {
+    if (restaurantMenu.length === 0 || seededDefaultsRef.current) return;
+    seededDefaultsRef.current = true;
+    const cats = Array.from(new Set(restaurantMenu.map((item) => item.category)));
+    const defaults: Record<string, boolean> = {};
+    cats.forEach((cat, idx) => {
+      defaults[cat] = idx !== 0; // collapse every category except the first
+    });
+    setCollapsedCategories(defaults);
+  }, [restaurantMenu]);
+
+  const toggleCategoryCollapse = (category: string) => {
+    setCollapsedCategories((prev) => ({
+      ...prev,
+      [category]: !prev[category],
+    }));
+  };
+
+  const collapseAll = () => {
+    const allCollapsed: Record<string, boolean> = {};
+    groupedSections.forEach((s) => {
+      allCollapsed[s.category] = true;
+    });
+    setCollapsedCategories(allCollapsed);
+  };
+
+  const expandAll = () => {
+    setCollapsedCategories({});
+  };
+
+  // Data-driven hero slides: real brand info + actual menu categories (never advertises dishes that don't exist)
+  const heroSlides = useMemo(() => {
+    const avgRating = restaurantMenu.length
+      ? (restaurantMenu.reduce((sum, i) => sum + (i.rating || 0), 0) / restaurantMenu.length).toFixed(1)
+      : '4.7';
+    const avgPrice = restaurantMenu.length
+      ? restaurantMenu.reduce((sum, i) => sum + i.price, 0) / restaurantMenu.length
+      : 150;
+    const costForTwo = `₹${Math.max(200, Math.round((avgPrice * 2) / 10) * 10)} for two`;
+
+    const brandSlide = {
+      id: 'brand',
+      tag: `★★★★★ ${avgRating} · ${restaurantMenu.length || '50'}+ ITEMS`,
+      cuisineTag: 'Coffee, chai & comfort food',
+      title: restaurantProfile.name,
+      subtitle: restaurantProfile.tagline || 'Good food. Good adda.',
+      description: `Fresh coffee, chai, momos, burgers and more — ordered direct via WhatsApp in ${restaurantProfile.estimatedDeliveryTime}.`,
+      image: restaurantProfile.bannerImage || CATEGORY_IMAGES['Coffee'],
+      rating: avgRating,
+      prepTime: restaurantProfile.estimatedDeliveryTime,
+      cost: costForTwo,
+    };
+
+    const categorySlides = Object.keys(CATEGORY_IMAGES)
+      .map((category) => {
+        const items = restaurantMenu.filter((i) => i.category === category && i.isAvailable);
+        if (items.length === 0) return null;
+        const star = items.find((i) => i.isBestseller) || items[0];
+        return {
+          id: `cat-${category}`,
+          tag: `${CATEGORY_ICONS[category] || '🍽️'} ${category.toUpperCase()}`,
+          cuisineTag: `${items.length} items on the menu`,
+          title: star.name,
+          subtitle: category,
+          description: star.description,
+          image: CATEGORY_IMAGES[category],
+          rating: String(star.rating || 4.7),
+          prepTime: star.preparationTime || '15-25 mins',
+          cost: `from ₹${Math.min(...items.map((i) => i.price))}`,
+        };
+      })
+      .filter((s): s is NonNullable<typeof s> => s !== null)
+      .slice(0, 3);
+
+    return [brandSlide, ...categorySlides];
+  }, [restaurantMenu, restaurantProfile]);
 
   const scrollCategories = (direction: 'left' | 'right') => {
     if (categorySliderRef.current) {
@@ -149,22 +173,29 @@ export const HomeView: React.FC = () => {
 
   // Auto rotate banner slides every 5 seconds
   React.useEffect(() => {
+    if (heroSlides.length <= 1) return;
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [heroSlides.length]);
 
-  const slide = HERO_SLIDES[currentSlide];
+  // Guard against out-of-bounds index when menu data loads asynchronously
+  const slide = heroSlides[Math.min(currentSlide, heroSlides.length - 1)];
 
-  // Distinct Bestsellers (Avoids duplicate item repetition in Popular row)
-  const bestsellersList = useMemo(() => {
-    return restaurantMenu.filter((i) => i.isBestseller).slice(0, 3);
-  }, [restaurantMenu]);
-
-  // Distinct Popular Recommendations
-  const popularPicks = useMemo(() => {
-    return restaurantMenu.slice(0, 6);
+  // Merged featured picks: Bestsellers prioritized first, then remaining popular items,
+  // deduplicated by id and capped at 6 so the preview row stays compact.
+  const featuredPicks = useMemo(() => {
+    const bestsellers = restaurantMenu.filter((i) => i.isBestseller);
+    const seen = new Set<string>();
+    const merged: MenuItem[] = [];
+    for (const item of [...bestsellers, ...restaurantMenu]) {
+      if (seen.has(item.id)) continue;
+      seen.add(item.id);
+      merged.push(item);
+      if (merged.length >= 6) break;
+    }
+    return merged;
   }, [restaurantMenu]);
 
   // Grouped Menu List
@@ -222,7 +253,7 @@ export const HomeView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-7 pb-0 w-full">
+    <div className="space-y-6 pb-0 w-full">
 
       {/* 1. CINEMATIC RESTAURANT HERO SLIDER */}
       <section className="relative rounded-3xl overflow-hidden bg-[#1E1B18] text-white border border-[#3A3530] shadow-md group">
@@ -300,7 +331,7 @@ export const HomeView: React.FC = () => {
             {/* Slider Navigation Controls (Dots & Arrows) */}
             <div className="flex items-center gap-2.5">
               <button
-                onClick={() => setCurrentSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length)}
+                onClick={() => setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length)}
                 className="w-8 h-8 rounded-full bg-[#141210]/70 hover:bg-[#141210] border border-white/20 flex items-center justify-center text-white transition-all cursor-pointer"
                 title="Previous Slide"
               >
@@ -308,7 +339,7 @@ export const HomeView: React.FC = () => {
               </button>
 
               <div className="flex items-center gap-1.5">
-                {HERO_SLIDES.map((_, idx) => (
+                {heroSlides.map((_, idx) => (
                   <button
                     key={idx}
                     onClick={() => setCurrentSlide(idx)}
@@ -320,7 +351,7 @@ export const HomeView: React.FC = () => {
               </div>
 
               <button
-                onClick={() => setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length)}
+                onClick={() => setCurrentSlide((prev) => (prev + 1) % heroSlides.length)}
                 className="w-8 h-8 rounded-full bg-[#141210]/70 hover:bg-[#141210] border border-white/20 flex items-center justify-center text-white transition-all cursor-pointer"
                 title="Next Slide"
               >
@@ -467,11 +498,10 @@ export const HomeView: React.FC = () => {
                   className="flex flex-col items-center gap-1.5 shrink-0 group cursor-pointer select-none focus:outline-none"
                 >
                   <div
-                    className={`w-15 h-15 sm:w-17 sm:h-17 rounded-full overflow-hidden p-0.5 border-2 transition-all duration-200 ${
-                      isSelected
-                        ? 'border-[#7C203A] ring-2 ring-[#7C203A]/20 scale-105 shadow-sm'
-                        : 'border-[#E9C5A7] bg-[#FFFDF9] group-hover:border-[#7C203A]'
-                    }`}
+                    className={`w-15 h-15 sm:w-17 sm:h-17 rounded-full overflow-hidden p-0.5 border-2 transition-all duration-200 ${isSelected
+                      ? 'border-[#7C203A] ring-2 ring-[#7C203A]/20 scale-105 shadow-sm'
+                      : 'border-[#E9C5A7] bg-[#FFFDF9] group-hover:border-[#7C203A]'
+                      }`}
                   >
                     <img
                       src={cat.image}
@@ -482,11 +512,10 @@ export const HomeView: React.FC = () => {
                   <div className="flex items-center gap-1">
                     <span className="text-xs">{cat.icon}</span>
                     <span
-                      className={`text-xs font-bold tracking-tight text-center whitespace-nowrap ${
-                        isSelected
-                          ? 'text-[#7C203A] font-black'
-                          : 'text-[#684332] group-hover:text-[#3D1020]'
-                      }`}
+                      className={`text-xs font-bold tracking-tight text-center whitespace-nowrap ${isSelected
+                        ? 'text-[#7C203A] font-black'
+                        : 'text-[#684332] group-hover:text-[#3D1020]'
+                        }`}
                     >
                       {cat.name}
                     </span>
@@ -512,7 +541,7 @@ export const HomeView: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="font-serif text-xl sm:text-2xl font-black text-[#3D1020] flex items-center gap-2">
-              <span>⭐ Popular at {restaurantProfile.name}</span>
+              <span>⭐ Popular & Bestsellers</span>
             </h2>
             <p className="text-xs text-[#947362] mt-0.5">Most loved dishes ordered today</p>
           </div>
@@ -527,7 +556,7 @@ export const HomeView: React.FC = () => {
 
         {/* 6 Grid Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-          {popularPicks.map((item) => {
+          {featuredPicks.map((item) => {
             const qty = getCartItemQty(item.id);
             const cartItemId = getCartItemId(item.id);
 
@@ -549,6 +578,11 @@ export const HomeView: React.FC = () => {
                     <Star className="w-3 h-3 fill-[#FBBF24] text-[#FBBF24]" />
                     <span>{item.rating || '4.8'}</span>
                   </div>
+                  {item.isBestseller && (
+                    <div className="absolute top-2 right-2 bg-[#7C203A]/90 backdrop-blur-xs text-white text-[9px] font-black px-2 py-0.5 rounded-md shadow-xs">
+                      Bestseller ⭐
+                    </div>
+                  )}
                 </div>
 
                 <div className="p-3 flex-1 flex flex-col justify-between space-y-2.5">
@@ -597,88 +631,8 @@ export const HomeView: React.FC = () => {
         </div>
       </section>
 
-      {/* 5. DEDICATED BESTSELLERS (Curated 3-Card Highlights) */}
-      <section className="space-y-4 pt-1">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="font-serif text-xl sm:text-2xl font-black text-[#3D1020] flex items-center gap-2">
-              <span>🔥 Bestsellers</span>
-            </h2>
-            <p className="text-xs text-[#947362] mt-0.5">Signature items handcrafted with care</p>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {bestsellersList.map((item) => {
-            const qty = getCartItemQty(item.id);
-            const cartItemId = getCartItemId(item.id);
-
-            return (
-              <div
-                key={`best-${item.id}`}
-                className="bg-[#FFFDF9] rounded-2xl p-4 border border-[#E9C5A7] shadow-xs hover:shadow-md transition-all flex items-center justify-between gap-4 group"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className={`w-3 h-3 rounded-[2px] border flex items-center justify-center p-[2px] ${item.vegType === 'veg' ? 'border-[#15803D]' : 'border-[#B91C1C]'}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${item.vegType === 'veg' ? 'bg-[#15803D]' : 'bg-[#B91C1C]'}`} />
-                    </span>
-                    <span className="text-[10px] font-black text-[#7C203A] uppercase tracking-wide">
-                      Chef Choice ⭐
-                    </span>
-                  </div>
-
-                  <h4
-                    onClick={() => navigateTo('item-detail', { itemId: item.id })}
-                    className="font-serif text-base font-bold text-[#1A1816] truncate cursor-pointer hover:text-[#7C203A] transition-colors"
-                  >
-                    {item.name}
-                  </h4>
-
-                  <p className="text-xs text-[#7D7872] line-clamp-2 mt-1 leading-relaxed">
-                    {item.description}
-                  </p>
-
-                  <div className="flex items-center gap-2 mt-2 font-bold text-sm text-[#1A1816]">
-                    <span>₹{item.price}</span>
-                    {item.originalPrice && item.originalPrice > item.price && (
-                      <span className="text-xs text-[#9E988F] line-through font-normal">₹{item.originalPrice}</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="relative shrink-0 flex flex-col items-center">
-                  <div
-                    onClick={() => navigateTo('item-detail', { itemId: item.id })}
-                    className="w-24 h-24 rounded-xl overflow-hidden bg-[#F4F2EC] border border-[#E8E5DD] cursor-pointer"
-                  >
-                    <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                  </div>
-
-                  <div className="absolute -bottom-2 w-20">
-                    {qty === 0 ? (
-                      <button
-                        onClick={() => addToCart(item, 1)}
-                        className="w-full py-1 bg-white hover:bg-[#FBE4CB] text-[#7C203A] border border-[#7C203A] rounded-lg font-extrabold text-[10px] uppercase transition-all shadow-xs cursor-pointer"
-                      >
-                        ADD +
-                      </button>
-                    ) : (
-                      <div className="flex items-center justify-between bg-[#7C203A] text-white rounded-lg font-bold text-xs py-0.5 px-1.5 shadow-xs">
-                        <button onClick={() => cartItemId && updateCartQuantity(cartItemId, qty - 1)} className="p-0.5">-</button>
-                        <span className="text-xs">{qty}</span>
-                        <button onClick={() => cartItemId && updateCartQuantity(cartItemId, qty + 1)} className="p-0.5">+</button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* 6. FILTER TOOLBAR */}
+      {/* 6. FILTER TOOLBAR & EXPAND/COLLAPSE CONTROLS */}
       <section className="flex flex-wrap items-center justify-between gap-2.5 pt-2">
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -737,142 +691,181 @@ export const HomeView: React.FC = () => {
           </button>
         </div>
 
-        <span className="text-xs text-[#7D7872] hidden sm:inline">
-          Showing authentic clay-handi delicacies
-        </span>
+        {/* Quick Collapse / Expand All toggle */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={collapseAll}
+            className="text-[11px] font-bold text-[#7C203A] bg-white border border-[#E9C5A7] hover:bg-[#FBE4CB] px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+          >
+            Collapse All
+          </button>
+          <button
+            type="button"
+            onClick={expandAll}
+            className="text-[11px] font-bold text-[#7C203A] bg-white border border-[#E9C5A7] hover:bg-[#FBE4CB] px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+          >
+            Expand All
+          </button>
+        </div>
       </section>
 
       {/* 7. MAIN 2-COLUMN COMMERCE SECTION (70% Left Menu + 30% Right Sticky Cart) */}
       <div id="menu-catalog" className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start scroll-mt-28">
 
         {/* LEFT COLUMN (70% — 8 cols): Compact Modern 2-Column Food Grid */}
-        <div className="lg:col-span-8 space-y-6">
-          {groupedSections.map((sec) => (
-            <div
-              key={sec.category}
-              id={`cat-sec-${sec.category.replace(/[^a-zA-Z0-9]/g, '-')}`}
-              className="bg-[#FFFDF9] rounded-3xl p-5 sm:p-6 border border-[#E9C5A7] shadow-xs space-y-4 scroll-mt-32"
-            >
-              <div className="flex items-center justify-between border-b border-[#F3DCC5] pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">{CATEGORY_ICONS[sec.category] || '🍽️'}</span>
-                  <h3 className="font-serif text-lg sm:text-xl font-black text-[#3D1020]">{sec.category}</h3>
-                </div>
-                <span className="text-xs font-bold text-[#947362] bg-[#FFF4E8] px-2.5 py-1 rounded-full border border-[#E9C5A7]">
-                  {sec.items.length} {sec.items.length === 1 ? 'item' : 'items'}
-                </span>
-              </div>
+        <div className="lg:col-span-8 space-y-4">
+          {groupedSections.map((sec) => {
+            const isCollapsed = !!collapsedCategories[sec.category];
 
-              {/* 2-Column Compact Card Grid per Category */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {sec.items.map((item) => {
-                  const qty = getCartItemQty(item.id);
-                  const cartItemId = getCartItemId(item.id);
+            return (
+              <div
+                key={sec.category}
+                id={`cat-sec-${sec.category.replace(/[^a-zA-Z0-9]/g, '-')}`}
+                className="bg-[#FFFDF9] rounded-3xl p-5 sm:p-6 border border-[#E9C5A7] shadow-xs space-y-4 scroll-mt-32 transition-all duration-300"
+              >
+                <div
+                  onClick={() => toggleCategoryCollapse(sec.category)}
+                  className={`flex items-center justify-between cursor-pointer select-none group/hdr ${isCollapsed ? 'pb-0 border-b-0' : 'border-b border-[#F3DCC5] pb-3'
+                    }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">{CATEGORY_ICONS[sec.category] || '🍽️'}</span>
+                    <h3 className="font-serif text-lg sm:text-xl font-black text-[#3D1020] group-hover/hdr:text-[#7C203A] transition-colors">
+                      {sec.category}
+                    </h3>
+                  </div>
 
-                  return (
-                    <div
-                      key={item.id}
-                      className="p-3.5 rounded-2xl bg-[#FFF4E8]/60 hover:bg-[#FFF4E8] border border-[#E9C5A7]/80 hover:border-[#7C203A]/50 transition-all flex items-start justify-between gap-3 group shadow-2xs"
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-[#947362] bg-[#FFF4E8] px-2.5 py-1 rounded-full border border-[#E9C5A7]">
+                      {sec.items.length} {sec.items.length === 1 ? 'item' : 'items'}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label={isCollapsed ? 'Expand category' : 'Collapse category'}
+                      className="w-7 h-7 rounded-full bg-[#FFF4E8] border border-[#E9C5A7] flex items-center justify-center text-[#7C203A] group-hover/hdr:bg-[#FBE4CB] transition-all"
                     >
-                      {/* Left: Food Info */}
-                      <div className="flex-1 min-w-0 pr-1">
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <span
-                            className={`w-3.5 h-3.5 rounded-[2px] border flex items-center justify-center p-[2px] ${item.vegType === 'veg' ? 'border-[#15803D]' : 'border-[#B91C1C]'
-                              }`}
-                          >
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full ${item.vegType === 'veg' ? 'bg-[#15803D]' : 'bg-[#B91C1C]'
-                                }`}
-                            />
-                          </span>
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-300 ${isCollapsed ? '-rotate-90' : 'rotate-0'
+                          }`}
+                      />
+                    </button>
+                  </div>
+                </div>
 
-                          {item.isBestseller && (
-                            <span className="text-[9px] font-black text-[#7C203A] bg-[#FBE4CB] px-1.5 py-0.2 rounded border border-[#E9B88F]">
-                              Bestseller ⭐
-                            </span>
-                          )}
+                {/* Collapsible Food Cards Container */}
+                {!isCollapsed && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1 animate-in fade-in duration-200">
+                    {sec.items.map((item) => {
+                      const qty = getCartItemQty(item.id);
+                      const cartItemId = getCartItemId(item.id);
 
-                          {item.isSpicy && (
-                            <span className="text-[9px] text-[#C2410C] font-semibold flex items-center gap-0.5">
-                              <Flame className="w-2.5 h-2.5 fill-current" />
-                            </span>
-                          )}
-                        </div>
-
-                        <h4
-                          onClick={() => navigateTo('item-detail', { itemId: item.id })}
-                          className="font-bold text-xs sm:text-sm text-[#3D1020] leading-snug cursor-pointer hover:text-[#7C203A] transition-colors line-clamp-1"
-                          title={item.name}
-                        >
-                          {item.name}
-                        </h4>
-
-                        <div className="flex items-center gap-2 my-1">
-                          <span className="text-sm font-black text-[#3D1020]">₹{item.price}</span>
-                          {item.originalPrice && item.originalPrice > item.price && (
-                            <span className="text-[11px] text-[#947362] line-through font-normal">
-                              ₹{item.originalPrice}
-                            </span>
-                          )}
-                          {item.rating && (
-                            <span className="text-[10px] text-[#7C203A] font-bold flex items-center gap-0.5 bg-[#FBE4CB] px-1 py-0.2 rounded">
-                              ★ {item.rating}
-                            </span>
-                          )}
-                        </div>
-
-                        <p className="text-[11px] text-[#684332] line-clamp-2 leading-relaxed">
-                          {item.description}
-                        </p>
-                      </div>
-
-                      {/* Right: Food Image (72px) + Quick Add Pill */}
-                      <div className="relative shrink-0 flex flex-col items-center">
+                      return (
                         <div
-                          onClick={() => navigateTo('item-detail', { itemId: item.id })}
-                          className="w-20 h-20 sm:w-22 sm:h-22 rounded-xl overflow-hidden bg-[#FFFDF9] border border-[#E9C5A7] cursor-pointer shadow-xs"
+                          key={item.id}
+                          className="p-3.5 rounded-2xl bg-[#FFF4E8]/60 hover:bg-[#FFF4E8] border border-[#E9C5A7]/80 hover:border-[#7C203A]/50 transition-all flex items-start justify-between gap-3 group shadow-2xs"
                         >
-                          <img
-                            src={item.image}
-                            alt={item.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                        </div>
+                          {/* Left: Food Info */}
+                          <div className="flex-1 min-w-0 pr-1">
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <span
+                                className={`w-3.5 h-3.5 rounded-[2px] border flex items-center justify-center p-[2px] ${item.vegType === 'veg' ? 'border-[#15803D]' : 'border-[#B91C1C]'
+                                  }`}
+                              >
+                                <span
+                                  className={`w-1.5 h-1.5 rounded-full ${item.vegType === 'veg' ? 'bg-[#15803D]' : 'bg-[#B91C1C]'
+                                    }`}
+                                />
+                              </span>
 
-                        <div className="absolute -bottom-2 w-18 shadow-sm rounded-lg overflow-hidden bg-white border border-[#7C203A]">
-                          {qty === 0 ? (
-                            <button
-                              onClick={() => addToCart(item, 1)}
-                              className="w-full py-1 bg-[#FFFDF9] hover:bg-[#FBE4CB] text-[#7C203A] font-black text-[10px] uppercase tracking-wider transition-all cursor-pointer"
-                            >
-                              ADD +
-                            </button>
-                          ) : (
-                            <div className="flex items-center justify-between bg-[#7C203A] text-white font-bold text-xs py-0.5 px-1.5">
-                              <button
-                                onClick={() => cartItemId && updateCartQuantity(cartItemId, qty - 1)}
-                                className="px-1 hover:text-black cursor-pointer"
-                              >
-                                -
-                              </button>
-                              <span className="text-xs font-black">{qty}</span>
-                              <button
-                                onClick={() => cartItemId && updateCartQuantity(cartItemId, qty + 1)}
-                                className="px-1 hover:text-black cursor-pointer"
-                              >
-                                +
-                              </button>
+                              {item.isBestseller && (
+                                <span className="text-[9px] font-black text-[#7C203A] bg-[#FBE4CB] px-1.5 py-0.2 rounded border border-[#E9B88F]">
+                                  Bestseller ⭐
+                                </span>
+                              )}
+
+                              {item.isSpicy && (
+                                <span className="text-[9px] text-[#C2410C] font-semibold flex items-center gap-0.5">
+                                  <Flame className="w-2.5 h-2.5 fill-current" />
+                                </span>
+                              )}
                             </div>
-                          )}
+
+                            <h4
+                              onClick={() => navigateTo('item-detail', { itemId: item.id })}
+                              className="font-bold text-xs sm:text-sm text-[#3D1020] leading-snug cursor-pointer hover:text-[#7C203A] transition-colors line-clamp-1"
+                              title={item.name}
+                            >
+                              {item.name}
+                            </h4>
+
+                            <div className="flex items-center gap-2 my-1">
+                              <span className="text-sm font-black text-[#3D1020]">₹{item.price}</span>
+                              {item.originalPrice && item.originalPrice > item.price && (
+                                <span className="text-[11px] text-[#947362] line-through font-normal">
+                                  ₹{item.originalPrice}
+                                </span>
+                              )}
+                              {item.rating && (
+                                <span className="text-[10px] text-[#7C203A] font-bold flex items-center gap-0.5 bg-[#FBE4CB] px-1 py-0.2 rounded">
+                                  ★ {item.rating}
+                                </span>
+                              )}
+                            </div>
+
+                            <p className="text-[11px] text-[#684332] line-clamp-2 leading-relaxed">
+                              {item.description}
+                            </p>
+                          </div>
+
+                          {/* Right: Food Image (72px) + Quick Add Pill */}
+                          <div className="relative shrink-0 flex flex-col items-center">
+                            <div
+                              onClick={() => navigateTo('item-detail', { itemId: item.id })}
+                              className="w-20 h-20 sm:w-22 sm:h-22 rounded-xl overflow-hidden bg-[#FFFDF9] border border-[#E9C5A7] cursor-pointer shadow-xs"
+                            >
+                              <img
+                                src={item.image}
+                                alt={item.name}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              />
+                            </div>
+
+                            <div className="absolute -bottom-2 w-18 shadow-sm rounded-lg overflow-hidden bg-white border border-[#7C203A]">
+                              {qty === 0 ? (
+                                <button
+                                  onClick={() => addToCart(item, 1)}
+                                  className="w-full py-1 bg-[#FFFDF9] hover:bg-[#FBE4CB] text-[#7C203A] font-black text-[10px] uppercase tracking-wider transition-all cursor-pointer"
+                                >
+                                  ADD +
+                                </button>
+                              ) : (
+                                <div className="flex items-center justify-between bg-[#7C203A] text-white font-bold text-xs py-0.5 px-1.5">
+                                  <button
+                                    onClick={() => cartItemId && updateCartQuantity(cartItemId, qty - 1)}
+                                    className="px-1 hover:text-black cursor-pointer"
+                                  >
+                                    -
+                                  </button>
+                                  <span className="text-xs font-black">{qty}</span>
+                                  <button
+                                    onClick={() => cartItemId && updateCartQuantity(cartItemId, qty + 1)}
+                                    className="px-1 hover:text-black cursor-pointer"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* RIGHT COLUMN (30% — 4 cols): Sticky Commerce Cart Panel */}

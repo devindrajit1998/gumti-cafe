@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useApp } from '@/context/AppContext';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 import { X, Check } from 'lucide-react';
 
 const CUISINE_LIST = [
@@ -22,6 +23,7 @@ const CUISINE_LIST = [
 
 export const FilterModal: React.FC = () => {
   const { isFilterModalOpen, setIsFilterModalOpen, filterOptions, setFilterOptions, resetFilters } = useApp();
+  const { modalRef } = useModalAccessibility(isFilterModalOpen, () => setIsFilterModalOpen(false));
 
   if (!isFilterModalOpen) return null;
 
@@ -43,7 +45,12 @@ export const FilterModal: React.FC = () => {
     >
       <div
         id="filter-modal-content"
-        className="bg-white w-full md:max-w-md rounded-t-3xl md:rounded-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200"
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Filter menu"
+        tabIndex={-1}
+        className="bg-white w-full md:max-w-md rounded-t-3xl md:rounded-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200 focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -80,11 +87,10 @@ export const FilterModal: React.FC = () => {
                         sortBy: item.id as any,
                       }))
                     }
-                    className={`p-2.5 text-xs rounded-xl border text-left font-medium transition-all ${
-                      isSelected
+                    className={`p-2.5 text-xs rounded-xl border text-left font-medium transition-all ${isSelected
                         ? 'border-orange-500 bg-orange-50/50 text-orange-950 font-bold'
                         : 'border-zinc-200 hover:border-zinc-300 text-zinc-700 bg-white'
-                    }`}
+                      }`}
                   >
                     {item.label}
                   </button>
@@ -98,9 +104,8 @@ export const FilterModal: React.FC = () => {
             <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">Quick Filters</h4>
             <div className="space-y-2">
               <label
-                className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer ${
-                  filterOptions.pureVegOnly ? 'border-emerald-500 bg-emerald-50/30' : 'border-zinc-200'
-                }`}
+                className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer ${filterOptions.pureVegOnly ? 'border-emerald-500 bg-emerald-50/30' : 'border-zinc-200'
+                  }`}
                 onClick={() =>
                   setFilterOptions((prev) => ({ ...prev, pureVegOnly: !prev.pureVegOnly }))
                 }
@@ -109,15 +114,14 @@ export const FilterModal: React.FC = () => {
                 <input
                   type="checkbox"
                   checked={filterOptions.pureVegOnly}
-                  onChange={() => {}}
+                  onChange={() => { }}
                   className="accent-emerald-600 w-4 h-4 rounded"
                 />
               </label>
 
               <label
-                className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer ${
-                  filterOptions.fastDelivery ? 'border-orange-500 bg-orange-50/30' : 'border-zinc-200'
-                }`}
+                className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer ${filterOptions.fastDelivery ? 'border-orange-500 bg-orange-50/30' : 'border-zinc-200'
+                  }`}
                 onClick={() =>
                   setFilterOptions((prev) => ({ ...prev, fastDelivery: !prev.fastDelivery }))
                 }
@@ -126,15 +130,14 @@ export const FilterModal: React.FC = () => {
                 <input
                   type="checkbox"
                   checked={filterOptions.fastDelivery}
-                  onChange={() => {}}
+                  onChange={() => { }}
                   className="accent-orange-600 w-4 h-4 rounded"
                 />
               </label>
 
               <label
-                className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer ${
-                  filterOptions.ratingAbove4 ? 'border-amber-500 bg-amber-50/30' : 'border-zinc-200'
-                }`}
+                className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer ${filterOptions.ratingAbove4 ? 'border-amber-500 bg-amber-50/30' : 'border-zinc-200'
+                  }`}
                 onClick={() =>
                   setFilterOptions((prev) => ({ ...prev, ratingAbove4: !prev.ratingAbove4 }))
                 }
@@ -143,15 +146,14 @@ export const FilterModal: React.FC = () => {
                 <input
                   type="checkbox"
                   checked={filterOptions.ratingAbove4}
-                  onChange={() => {}}
+                  onChange={() => { }}
                   className="accent-amber-600 w-4 h-4 rounded"
                 />
               </label>
 
               <label
-                className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer ${
-                  filterOptions.offersOnly ? 'border-blue-500 bg-blue-50/30' : 'border-zinc-200'
-                }`}
+                className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer ${filterOptions.offersOnly ? 'border-blue-500 bg-blue-50/30' : 'border-zinc-200'
+                  }`}
                 onClick={() =>
                   setFilterOptions((prev) => ({ ...prev, offersOnly: !prev.offersOnly }))
                 }
@@ -160,7 +162,7 @@ export const FilterModal: React.FC = () => {
                 <input
                   type="checkbox"
                   checked={filterOptions.offersOnly}
-                  onChange={() => {}}
+                  onChange={() => { }}
                   className="accent-blue-600 w-4 h-4 rounded"
                 />
               </label>
@@ -177,11 +179,10 @@ export const FilterModal: React.FC = () => {
                   <button
                     key={cuisine}
                     onClick={() => handleCuisineToggle(cuisine)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                      isSelected
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${isSelected
                         ? 'bg-orange-600 text-white border-orange-600 shadow-xs'
                         : 'bg-white text-zinc-700 border-zinc-200 hover:border-zinc-300'
-                    }`}
+                      }`}
                   >
                     {cuisine}
                   </button>

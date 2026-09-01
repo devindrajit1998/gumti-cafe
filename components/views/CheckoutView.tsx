@@ -59,8 +59,8 @@ export const CheckoutView: React.FC = () => {
   } = useApp();
 
   const [isProcessing, setIsProcessing] = useState(false);
-  const [customerName, setCustomerName] = useState(guestCustomer.name || 'Guest Customer');
-  const [customerPhone, setCustomerPhone] = useState(guestCustomer.phone || '+91 98765 43210');
+  const [customerName, setCustomerName] = useState(guestCustomer.name || '');
+  const [customerPhone, setCustomerPhone] = useState(guestCustomer.phone || '');
   const [customerStreet, setCustomerStreet] = useState(guestCustomer.street || '');
   const [customerArea, setCustomerArea] = useState(guestCustomer.area || restaurantProfile.locality);
   const [specialNotes, setSpecialNotes] = useState(guestCustomer.specialNotes || '');
@@ -141,12 +141,21 @@ export const CheckoutView: React.FC = () => {
   const handleCompleteWhatsAppOrder = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!customerName.trim()) {
-      showToast('Please enter your name', undefined, 'error');
+    const trimmedName = customerName.trim();
+    const trimmedPhone = customerPhone.trim();
+    // Normalize phone: keep digits only for length/format checks
+    const phoneDigits = trimmedPhone.replace(/\D/g, '');
+
+    if (!trimmedName || trimmedName.length < 2) {
+      showToast('Please enter your full name', 'The cafe uses it to confirm your order', 'error');
       return;
     }
-    if (!customerPhone.trim()) {
-      showToast('Please enter your phone number', undefined, 'error');
+    if (!trimmedPhone) {
+      showToast('Please enter your WhatsApp number', 'The cafe will send order updates here', 'error');
+      return;
+    }
+    if (phoneDigits.length < 10 || phoneDigits.length > 13) {
+      showToast('Invalid phone number', 'Enter 10 digits, e.g. 98765 43210', 'error');
       return;
     }
 
@@ -173,7 +182,7 @@ export const CheckoutView: React.FC = () => {
         spread: 60,
         origin: { y: 0.6 },
       });
-    } catch (err) {}
+    } catch (err) { }
 
     // Dispatch order to WhatsApp
     setTimeout(() => {
@@ -244,11 +253,10 @@ export const CheckoutView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setOrderType('delivery')}
-                className={`py-2 px-3 rounded-lg border text-xs font-semibold transition-all flex flex-col items-center gap-1 cursor-pointer ${
-                  orderType === 'delivery'
+                className={`py-2 px-3 rounded-lg border text-xs font-semibold transition-all flex flex-col items-center gap-1 cursor-pointer ${orderType === 'delivery'
                     ? 'bg-[#FDF2EB] border-[#D94814] text-[#D94814] font-bold'
                     : 'bg-[#FAF9F5] border-[#E8E5DD] text-[#47433F] hover:bg-[#F4F2EC]'
-                }`}
+                  }`}
               >
                 <span className="text-base">🛵</span>
                 <span>Delivery</span>
@@ -257,11 +265,10 @@ export const CheckoutView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setOrderType('pickup')}
-                className={`py-2 px-3 rounded-lg border text-xs font-semibold transition-all flex flex-col items-center gap-1 cursor-pointer ${
-                  orderType === 'pickup'
+                className={`py-2 px-3 rounded-lg border text-xs font-semibold transition-all flex flex-col items-center gap-1 cursor-pointer ${orderType === 'pickup'
                     ? 'bg-[#FDF2EB] border-[#D94814] text-[#D94814] font-bold'
                     : 'bg-[#FAF9F5] border-[#E8E5DD] text-[#47433F] hover:bg-[#F4F2EC]'
-                }`}
+                  }`}
               >
                 <span className="text-base">🛍️</span>
                 <span>Self Pickup</span>
@@ -270,11 +277,10 @@ export const CheckoutView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setOrderType('dine_in')}
-                className={`py-2 px-3 rounded-lg border text-xs font-semibold transition-all flex flex-col items-center gap-1 cursor-pointer ${
-                  orderType === 'dine_in'
+                className={`py-2 px-3 rounded-lg border text-xs font-semibold transition-all flex flex-col items-center gap-1 cursor-pointer ${orderType === 'dine_in'
                     ? 'bg-[#FDF2EB] border-[#D94814] text-[#D94814] font-bold'
                     : 'bg-[#FAF9F5] border-[#E8E5DD] text-[#47433F] hover:bg-[#F4F2EC]'
-                }`}
+                  }`}
               >
                 <span className="text-base">🍽️</span>
                 <span>Dine-In Table</span>

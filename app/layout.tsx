@@ -15,6 +15,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('http://localhost:3000'),
   title: 'Gumti Cafe | Coffee, Chai, Momos, Pizza & Comfort Bites',
   description: 'Welcome to Gumti Cafe. Fresh artisan coffee, chai, momos, burgers, pizzas, and comfort food with direct WhatsApp ordering.',
   icons: {

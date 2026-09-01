@@ -3,6 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 import {
   FileText,
   X,
@@ -17,6 +18,7 @@ import {
 
 export const InvoiceModal: React.FC = () => {
   const { isInvoiceModalOpen, setIsInvoiceModalOpen, activeOrder, viewingInvoiceOrder, showToast } = useApp();
+  const { modalRef } = useModalAccessibility(isInvoiceModalOpen, () => setIsInvoiceModalOpen(false));
   const order = viewingInvoiceOrder || activeOrder;
 
   if (!isInvoiceModalOpen || !order) return null;
@@ -31,7 +33,14 @@ export const InvoiceModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-zinc-200 overflow-hidden flex flex-col max-h-[90vh]">
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Order invoice"
+        tabIndex={-1}
+        className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-zinc-200 overflow-hidden flex flex-col max-h-[90vh] focus:outline-none"
+      >
         {/* Header Bar */}
         <div className="p-4 sm:p-5 bg-zinc-900 text-white flex items-center justify-between">
           <div className="flex items-center gap-2.5">

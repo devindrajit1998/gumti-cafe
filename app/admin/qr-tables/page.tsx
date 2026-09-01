@@ -85,12 +85,12 @@ export default function AdminQRTablesPage() {
             {/* Top accent bar */}
             <div className="absolute top-0 inset-x-0 h-3 bg-gradient-to-r from-orange-600 to-amber-500" />
 
-            <div className="w-16 h-16 rounded-2xl bg-[#FFFDF9] border border-[#E9C5A7] mx-auto mt-4 mb-4 shadow-sm relative overflow-hidden p-1">
+            <div className="w-16 h-16 rounded-full bg-[#FFFDF9] border border-[#E9C5A7] mx-auto mt-4 mb-4 shadow-sm relative overflow-hidden">
               <Image
                 src={restaurantProfile.logoImage || '/logo-gumti.png'}
                 alt={restaurantProfile.name}
                 fill
-                className="object-contain p-0.5"
+                className="object-cover"
               />
             </div>
 

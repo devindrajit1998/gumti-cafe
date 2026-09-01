@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 import { X, MessageSquare, PhoneCall, HelpCircle, ChevronRight, Send, CheckCircle } from 'lucide-react';
 
 const FAQS = [
@@ -13,6 +14,7 @@ const FAQS = [
 
 export const HelpSupportModal: React.FC = () => {
   const { isHelpModalOpen, setIsHelpModalOpen, showToast } = useApp();
+  const { modalRef } = useModalAccessibility(isHelpModalOpen, () => setIsHelpModalOpen(false));
   const [activeTab, setActiveTab] = useState<'faq' | 'chat'>('faq');
   const [chatMessages, setChatMessages] = useState<Array<{ sender: 'bot' | 'user'; text: string; time: string }>>([
     {
@@ -60,7 +62,12 @@ export const HelpSupportModal: React.FC = () => {
     >
       <div
         id="help-modal-content"
-        className="bg-white w-full md:max-w-lg rounded-t-3xl md:rounded-2xl max-h-[88vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200"
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Help and support"
+        tabIndex={-1}
+        className="bg-white w-full md:max-w-lg rounded-t-3xl md:rounded-2xl max-h-[88vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200 focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -86,17 +93,15 @@ export const HelpSupportModal: React.FC = () => {
         <div className="flex border-b border-zinc-200 bg-zinc-50 px-4 pt-2 gap-4">
           <button
             onClick={() => setActiveTab('faq')}
-            className={`pb-2.5 text-xs font-bold border-b-2 transition-all ${
-              activeTab === 'faq' ? 'border-orange-600 text-orange-600' : 'border-transparent text-zinc-500 hover:text-zinc-800'
-            }`}
+            className={`pb-2.5 text-xs font-bold border-b-2 transition-all ${activeTab === 'faq' ? 'border-orange-600 text-orange-600' : 'border-transparent text-zinc-500 hover:text-zinc-800'
+              }`}
           >
             Frequent Questions
           </button>
           <button
             onClick={() => setActiveTab('chat')}
-            className={`pb-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${
-              activeTab === 'chat' ? 'border-orange-600 text-orange-600' : 'border-transparent text-zinc-500 hover:text-zinc-800'
-            }`}
+            className={`pb-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${activeTab === 'chat' ? 'border-orange-600 text-orange-600' : 'border-transparent text-zinc-500 hover:text-zinc-800'
+              }`}
           >
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             Live Chat
@@ -157,11 +162,10 @@ export const HelpSupportModal: React.FC = () => {
                     className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-[80%] p-3 rounded-2xl text-xs leading-relaxed ${
-                        msg.sender === 'user'
-                          ? 'bg-orange-600 text-white rounded-br-xs'
-                          : 'bg-zinc-100 text-zinc-800 rounded-bl-xs'
-                      }`}
+                      className={`max-w-[80%] p-3 rounded-2xl text-xs leading-relaxed ${msg.sender === 'user'
+                        ? 'bg-orange-600 text-white rounded-br-xs'
+                        : 'bg-zinc-100 text-zinc-800 rounded-bl-xs'
+                        }`}
                     >
                       <p>{msg.text}</p>
                       <span className={`text-[9px] block mt-1 ${msg.sender === 'user' ? 'text-orange-200' : 'text-zinc-600'}`}>

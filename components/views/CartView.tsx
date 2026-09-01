@@ -76,7 +76,7 @@ export const CartView: React.FC = () => {
           Your order plate is empty
         </h2>
         <p className="text-xs sm:text-sm text-[#7D7872] font-normal mt-1.5 mb-6 leading-relaxed">
-          Explore slow-cooked charcoal dum biryanis, royal tandoor kebabs, and fresh curries from our direct kitchen menu.
+          Fresh coffee, chai, momos, burgers, sandwiches and more — all ordered direct from the cafe kitchen.
         </p>
         <button
           onClick={() => navigateTo('home')}
@@ -104,8 +104,8 @@ export const CartView: React.FC = () => {
             {orderType === 'dine_in'
               ? `Dine-In • Table #${tableNumber}`
               : orderType === 'pickup'
-              ? 'Self Pickup / Counter Collection'
-              : 'Direct Kitchen Home Delivery'}
+                ? 'Self Pickup / Counter Collection'
+                : 'Direct Kitchen Home Delivery'}
           </div>
         </div>
 
@@ -132,14 +132,12 @@ export const CartView: React.FC = () => {
                   <div className="flex-1 min-w-0 pr-2">
                     <div className="flex items-center gap-2">
                       <div
-                        className={`w-3 h-3 rounded-[2px] border flex items-center justify-center p-[2px] shrink-0 ${
-                          item.vegType === 'veg' ? 'border-[#15803D]' : 'border-[#B91C1C]'
-                        }`}
+                        className={`w-3 h-3 rounded-[2px] border flex items-center justify-center p-[2px] shrink-0 ${item.vegType === 'veg' ? 'border-[#15803D]' : 'border-[#B91C1C]'
+                          }`}
                       >
                         <div
-                          className={`w-1 h-1 rounded-full ${
-                            item.vegType === 'veg' ? 'bg-[#15803D]' : 'bg-[#B91C1C]'
-                          }`}
+                          className={`w-1 h-1 rounded-full ${item.vegType === 'veg' ? 'bg-[#15803D]' : 'bg-[#B91C1C]'
+                            }`}
                         />
                       </div>
                       <span className="font-serif text-sm font-bold text-[#1A1816] leading-tight">
@@ -190,7 +188,7 @@ export const CartView: React.FC = () => {
             <h3 className="text-xs font-bold uppercase tracking-wider text-[#7D7872]">
               Dining Preferences
             </h3>
-            
+
             <div className="flex items-center justify-between text-xs py-1">
               <div>
                 <span className="font-semibold text-[#1A1816] block">Include Cutlery &amp; Napkins</span>

@@ -2,10 +2,12 @@
 
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 import { X, Phone, Mail, ShieldCheck, ArrowRight, Sparkles } from 'lucide-react';
 
 export const AuthModal: React.FC = () => {
   const { isAuthModalOpen, setIsAuthModalOpen, loginUser, showToast } = useApp();
+  const { modalRef } = useModalAccessibility(isAuthModalOpen, () => setIsAuthModalOpen(false));
   const [phoneOrEmail, setPhoneOrEmail] = useState('9876543210');
   const [name, setName] = useState('Indrajit Ghosh');
   const [step, setStep] = useState<'input' | 'otp'>('input');
@@ -42,13 +44,19 @@ export const AuthModal: React.FC = () => {
     >
       <div
         id="auth-modal-content"
-        className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Sign in"
+        tabIndex={-1}
+        className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Banner Header */}
         <div className="bg-gradient-to-br from-orange-500 to-amber-600 p-6 text-white relative">
           <button
             onClick={() => setIsAuthModalOpen(false)}
+            aria-label="Close sign-in dialog"
             className="absolute top-4 right-4 w-7 h-7 rounded-full bg-black/20 hover:bg-black/30 flex items-center justify-center text-white transition-colors"
           >
             <X className="w-4 h-4" />

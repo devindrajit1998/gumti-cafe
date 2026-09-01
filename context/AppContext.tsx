@@ -465,7 +465,11 @@ const LEGACY_RESTAURANT_ITEMS: MenuItem[] = [
 
 const INITIAL_RESTAURANT_ITEMS: MenuItem[] = GHUTI_CAFE_MENU;
 
-export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AppProvider: React.FC<{
+  children: React.ReactNode;
+  initialView?: ActiveView;
+  initialCategory?: string | null;
+}> = ({ children, initialView = 'home', initialCategory = null }) => {
   // Toast Notification System
   const [toast, setToast] = useState<{ title: string; desc?: string; type?: 'success' | 'info' | 'error' } | null>(null);
 
@@ -476,8 +480,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, 3500);
   }, []);
 
-  const [activeView, setActiveView] = useState<ActiveView>('home');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState<ActiveView>(initialView);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(initialCategory);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [recentSearches, setRecentSearches] = useState<string[]>([
     'Murgh Dum Biryani',
@@ -1814,11 +1818,58 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const resetFilters = () => setFilterOptions(defaultFilters);
 
   // Selected Food Item for Details View
-  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const itemParam = urlParams.get('item');
+        if (itemParam) return itemParam;
+      } catch { }
+    }
+    return null;
+  });
+
   const selectedItem = useMemo(() => {
     if (!selectedItemId) return null;
     return restaurantMenu.find((item) => item.id === selectedItemId) || null;
   }, [selectedItemId, restaurantMenu]);
+
+  // Sync route to pathname + query params
+  const getPathForView = (
+    view: ActiveView,
+    options?: { category?: string; query?: string; table?: string; itemId?: string; restaurantId?: string }
+  ) => {
+    const targetItemId = options?.itemId !== undefined ? options.itemId : selectedItemId;
+    const targetCategory = options?.category !== undefined ? options.category : selectedCategory;
+    const targetQuery = options?.query !== undefined ? options.query : searchQuery;
+
+    switch (view) {
+      case 'home':
+        return '/';
+      case 'item-detail':
+        return targetItemId ? `/item-detail?item=${encodeURIComponent(targetItemId)}` : '/item-detail';
+      case 'category-detail':
+        return targetCategory ? `/category-detail?cat=${encodeURIComponent(targetCategory)}` : '/category-detail';
+      case 'search':
+        return targetQuery ? `/search?q=${encodeURIComponent(targetQuery)}` : '/search';
+      case 'about':
+      case 'cart':
+      case 'checkout':
+      case 'book-table':
+      case 'contact':
+      case 'offers':
+      case 'orders':
+      case 'order-tracking':
+      case 'favorites':
+      case 'profile':
+      case 'qr-code':
+      case 'privacy':
+      case 'terms':
+        return `/${view}`;
+      default:
+        return `/${view}`;
+    }
+  };
 
   const navigateTo = (
     view: ActiveView,
@@ -1841,9 +1892,88 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (options?.itemId !== undefined) {
       setSelectedItemId(options.itemId);
     }
+
     setActiveView(view);
+
+    // Update browser address bar without full page reload
+    if (typeof window !== 'undefined') {
+      try {
+        const targetUrl = getPathForView(view, options);
+        if (window.location.pathname + window.location.search !== targetUrl) {
+          window.history.pushState({ view, ...options }, '', targetUrl);
+        }
+      } catch (err) {
+        console.error('History pushState error:', err);
+      }
+    }
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // Restore app state from the current URL (shared by popstate + initial deep-link load)
+  const restoreStateFromUrl = () => {
+    const path = window.location.pathname.replace(/^\/+/, '').split('/')[0] || 'home';
+    const searchParams = new URLSearchParams(window.location.search);
+    const itemParam = searchParams.get('item');
+    const catParam = searchParams.get('cat');
+    const qParam = searchParams.get('q');
+    const tableParam = searchParams.get('table');
+
+    if (itemParam) setSelectedItemId(itemParam);
+    if (catParam) setSelectedCategory(catParam);
+    if (qParam) setSearchQuery(qParam);
+    if (tableParam) {
+      setTableNumber(tableParam);
+      setOrderType('dine_in');
+    }
+
+    const validViews: ActiveView[] = [
+      'home',
+      'about',
+      'menu',
+      'cart',
+      'checkout',
+      'book-table',
+      'contact',
+      'offers',
+      'orders',
+      'order-tracking',
+      'favorites',
+      'profile',
+      'qr-code',
+      'privacy',
+      'terms',
+      'item-detail',
+      'category-detail',
+      'search',
+    ];
+
+    const matchedView = validViews.includes(path as ActiveView) ? (path as ActiveView) : 'home';
+    setActiveView(matchedView);
+  };
+
+  // On first mount, honor deep-link query params (e.g. /item-detail?item=..., /search?q=..., /category-detail?cat=...)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const hasDeepLinkParams = window.location.search.length > 0;
+    if (hasDeepLinkParams) {
+      restoreStateFromUrl();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Listen for browser Back and Forward navigation buttons
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handlePopState = () => {
+      restoreStateFromUrl();
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <AppContext.Provider

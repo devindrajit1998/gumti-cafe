@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getImageKitInstance } from '@/lib/imagekit';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
