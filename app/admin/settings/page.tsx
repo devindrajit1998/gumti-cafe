@@ -26,6 +26,9 @@ export default function AdminSettingsPage() {
     serviceTaxPercentage: restaurantProfile.serviceTaxPercentage,
     estimatedDeliveryTime: restaurantProfile.estimatedDeliveryTime,
     openingHours: restaurantProfile.openingHours,
+    logoImage: restaurantProfile.logoImage,
+    bannerImage: restaurantProfile.bannerImage,
+    bannerImageMobile: restaurantProfile.bannerImageMobile,
   });
 
   const handleSave = (e: React.FormEvent) => {
@@ -62,7 +65,7 @@ export default function AdminSettingsPage() {
   const inputClass = "w-full text-sm px-3 py-2.5 rounded-xl border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-orange-500";
 
   return (
-    <div className="p-6 lg:p-8 max-w-4xl space-y-6">
+    <div className="p-6 lg:p-8 w-full space-y-6">
       <div>
         <h1 className="text-2xl font-black text-zinc-900">Restaurant Settings</h1>
         <p className="text-sm text-zinc-500 mt-1">Configure your restaurant profile, payment details, and delivery settings.</p>
@@ -86,19 +89,13 @@ export default function AdminSettingsPage() {
             </div>
             <div>
               <label className="text-xs font-bold text-zinc-700 block mb-1.5">WhatsApp Order Number (No +)</label>
-              <input
-                value={form.whatsappPhone || ''} onChange={(e) => setForm({ ...form, whatsappPhone: e.target.value.replace(/\D/g, '') })}
-                placeholder="e.g. 919876543210" required
-                className={`${inputClass} text-emerald-700 font-mono`}
-              />
-              <p className="text-[10px] text-zinc-400 mt-1">Orders are delivered to this WhatsApp number.</p>
+              <input value={form.whatsappPhone || ''} onChange={(e) => setForm({ ...form, whatsappPhone: e.target.value })} placeholder="919876543210" className={inputClass} />
+              <p className="text-[11px] text-zinc-400 mt-1">Orders are delivered to this WhatsApp number.</p>
             </div>
             <div>
               <label className="text-xs font-bold text-zinc-700 block mb-1.5">Helpline Phone</label>
-              <input value={form.phone || ''} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={inputClass} />
+              <input value={form.phone || ''} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+91 98765 43210" className={inputClass} />
             </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="text-xs font-bold text-zinc-700 block mb-1.5">Locality</label>
               <input value={form.locality || ''} onChange={(e) => setForm({ ...form, locality: e.target.value })} className={inputClass} />
@@ -109,7 +106,7 @@ export default function AdminSettingsPage() {
             </div>
             <div>
               <label className="text-xs font-bold text-zinc-700 block mb-1.5">FSSAI License #</label>
-              <input value={form.fssaiNumber || ''} onChange={(e) => setForm({ ...form, fssaiNumber: e.target.value })} className={`${inputClass} font-mono`} />
+              <input value={form.fssaiNumber || ''} onChange={(e) => setForm({ ...form, fssaiNumber: e.target.value })} className={inputClass} />
             </div>
           </div>
           <div>
@@ -117,13 +114,40 @@ export default function AdminSettingsPage() {
             <input value={form.address || ''} onChange={(e) => setForm({ ...form, address: e.target.value })} className={inputClass} />
           </div>
 
-          <div className="pt-2 border-t border-zinc-100">
-            <ImageKitUploader
-              label="Restaurant Brand Logo (ImageKit Cloud Storage)"
-              currentImageUrl={form.logoImage || '/logo-gumti.png'}
-              onUploadSuccess={(url) => setForm({ ...form, logoImage: url })}
-              folder="/gumti-cafe/branding"
-            />
+          <div className="pt-4 border-t border-zinc-100 space-y-4">
+            <h3 className="text-xs font-black text-zinc-900 uppercase tracking-wider">Branding & Hero Banners</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <ImageKitUploader
+                label="Restaurant Brand Logo"
+                currentImageUrl={form.logoImage || '/logo-gumti.png'}
+                onUploadSuccess={(url) => {
+                  setForm((prev) => ({ ...prev, logoImage: url }));
+                  updateRestaurantProfile({ logoImage: url });
+                  showToast('Logo Updated! ✅', 'Brand logo updated live across the site.', 'success');
+                }}
+                folder="/gumti-cafe/branding"
+              />
+              <ImageKitUploader
+                label="Hero Banner (Desktop / Web)"
+                currentImageUrl={form.bannerImage || 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1200&auto=format&fit=crop&q=80'}
+                onUploadSuccess={(url) => {
+                  setForm((prev) => ({ ...prev, bannerImage: url }));
+                  updateRestaurantProfile({ bannerImage: url });
+                  showToast('Web Banner Updated! ✅', 'Desktop banner updated live on homepage.', 'success');
+                }}
+                folder="/gumti-cafe/branding"
+              />
+              <ImageKitUploader
+                label="Hero Banner (Mobile Version)"
+                currentImageUrl={form.bannerImageMobile || form.bannerImage || 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=700&auto=format&fit=crop&q=80'}
+                onUploadSuccess={(url) => {
+                  setForm((prev) => ({ ...prev, bannerImageMobile: url }));
+                  updateRestaurantProfile({ bannerImageMobile: url });
+                  showToast('Mobile Banner Updated! ✅', 'Mobile banner updated live on homepage.', 'success');
+                }}
+                folder="/gumti-cafe/branding"
+              />
+            </div>
           </div>
         </div>
 

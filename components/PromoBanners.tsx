@@ -2,11 +2,20 @@
 
 import React from 'react';
 import { useApp } from '@/context/AppContext';
-import { Percent, ArrowRight, Sparkles, Copy, Check, Megaphone } from 'lucide-react';
-import Image from 'next/image';
+import { Percent, ArrowRight, Check, Megaphone } from 'lucide-react';
+import { BannerCarousel } from '@/components/BannerCarousel';
+import type { BannerRecord, BannerTheme } from '@/lib/types';
 
-export const PromoBanners: React.FC = () => {
-  const { applyCoupon, navigateTo, adminCoupons, bannerAnnouncement, showToast } = useApp();
+const ANNOUNCEMENT_THEMES: Record<BannerTheme, string> = {
+  orange: 'from-amber-500 via-orange-500 to-rose-500',
+  rose: 'from-rose-500 via-pink-600 to-purple-600',
+  emerald: 'from-emerald-500 via-teal-600 to-cyan-600',
+  violet: 'from-violet-500 via-purple-600 to-indigo-600',
+  zinc: 'from-zinc-700 via-neutral-700 to-zinc-800',
+};
+
+const AnnouncementStrip: React.FC<{ banner: BannerRecord }> = ({ banner }) => {
+  const { applyCoupon, adminCoupons } = useApp();
   const [copiedCode, setCopiedCode] = React.useState<string | null>(null);
 
   const handleApply = (code: string) => {
@@ -19,35 +28,48 @@ export const PromoBanners: React.FC = () => {
   };
 
   return (
-    <section className="mb-10 space-y-5">
-      {/* Live Announcement Marquee Banner from Admin */}
-      {bannerAnnouncement && bannerAnnouncement.enabled && bannerAnnouncement.text && (
-        <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 rounded-2xl p-3 sm:p-4 text-white shadow-md flex items-center justify-between gap-3 animate-in fade-in duration-300">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center shrink-0">
-              <Megaphone className="w-4 h-4 text-white" />
+    <div className={`bg-gradient-to-r ${ANNOUNCEMENT_THEMES[banner.theme ?? 'orange']} rounded-2xl p-3 sm:p-4 text-white shadow-md flex items-center justify-between gap-3 animate-in fade-in duration-300`}>
+      <div className="flex items-center gap-2.5 min-w-0">
+        <span className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center shrink-0">
+          <Megaphone className="w-4 h-4 text-white" />
+        </span>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-white text-orange-700 shadow-xs shrink-0">
+              {banner.badge || "TODAY'S SPECIAL"}
             </span>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-white text-orange-700 shadow-xs shrink-0">
-                  {bannerAnnouncement.badge || 'TODAY\'S SPECIAL'}
-                </span>
-              </div>
-              <p className="text-xs sm:text-sm font-bold text-white leading-snug truncate mt-0.5">
-                {bannerAnnouncement.text}
-              </p>
-            </div>
           </div>
-
-          {bannerAnnouncement.couponCode && (
-            <button
-              onClick={() => handleApply(bannerAnnouncement.couponCode!)}
-              className="px-3.5 py-1.5 bg-white text-orange-700 hover:bg-orange-50 rounded-xl text-xs font-black shrink-0 shadow-xs transition-colors"
-            >
-              {copiedCode === bannerAnnouncement.couponCode ? 'Applied! ✓' : `Apply ${bannerAnnouncement.couponCode}`}
-            </button>
-          )}
+          <p className="text-xs sm:text-sm font-bold text-white leading-snug truncate mt-0.5">
+            {banner.title}
+          </p>
         </div>
+      </div>
+
+      {banner.couponCode && (
+        <button
+          onClick={() => handleApply(banner.couponCode!)}
+          className="px-3.5 py-1.5 bg-white text-orange-700 hover:bg-orange-50 rounded-xl text-xs font-black shrink-0 shadow-xs transition-colors"
+        >
+          {copiedCode === banner.couponCode ? 'Applied! ✓' : `Apply ${banner.couponCode}`}
+        </button>
+      )}
+    </div>
+  );
+};
+
+export const PromoBanners: React.FC = () => {
+  const { navigateTo, adminCoupons, activeAnnouncementBanners, activePromoBanners } = useApp();
+
+  return (
+    <section className="mb-10 space-y-5">
+      {/* Announcement marquee banners from the Banner Management System */}
+      {activeAnnouncementBanners.map((banner) => (
+        <AnnouncementStrip key={banner.id} banner={banner} />
+      ))}
+
+      {/* Promo image carousel from the Banner Management System */}
+      {activePromoBanners.length > 0 && (
+        <BannerCarousel banners={activePromoBanners} heightClass="h-44 sm:h-56" interval={5000} />
       )}
 
       <div className="flex items-center justify-between">
@@ -68,7 +90,6 @@ export const PromoBanners: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {adminCoupons.slice(0, 3).map((coupon, idx) => {
-          const isCopied = copiedCode === coupon.code;
           const bgGradients = [
             'from-amber-600 to-orange-700',
             'from-rose-600 to-purple-800',
@@ -98,28 +119,7 @@ export const PromoBanners: React.FC = () => {
               </div>
 
               {/* Actions */}
-              <div className="relative z-10 flex items-center justify-between pt-2 border-t border-white/20">
-                <button
-                  onClick={() => handleApply(coupon.code)}
-                  className="text-xs font-extrabold bg-white text-zinc-900 hover:bg-zinc-100 py-1.5 px-3.5 rounded-xl shadow-xs flex items-center gap-1.5 transition-colors"
-                >
-                  {isCopied ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Applied!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Percent className="w-3.5 h-3.5 text-orange-600" />
-                      <span>Apply Code</span>
-                    </>
-                  )}
-                </button>
-
-                <span className="text-[11px] text-white/80 font-bold">
-                  Min ₹{coupon.minOrderValue}
-                </span>
-              </div>
+              <CouponActions code={coupon.code} minOrderValue={coupon.minOrderValue} />
             </div>
           );
         })}
@@ -128,3 +128,41 @@ export const PromoBanners: React.FC = () => {
   );
 };
 
+const CouponActions: React.FC<{ code: string; minOrderValue: number }> = ({ code, minOrderValue }) => {
+  const { applyCoupon, adminCoupons } = useApp();
+  const [isCopied, setIsCopied] = React.useState(false);
+
+  const handleApply = () => {
+    const coupon = adminCoupons.find((c) => c.code === code);
+    if (coupon) {
+      applyCoupon(coupon);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2500);
+    }
+  };
+
+  return (
+    <div className="relative z-10 flex items-center justify-between pt-2 border-t border-white/20">
+      <button
+        onClick={handleApply}
+        className="text-xs font-extrabold bg-white text-zinc-900 hover:bg-zinc-100 py-1.5 px-3.5 rounded-xl shadow-xs flex items-center gap-1.5 transition-colors"
+      >
+        {isCopied ? (
+          <>
+            <Check className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Applied!</span>
+          </>
+        ) : (
+          <>
+            <Percent className="w-3.5 h-3.5 text-orange-600" />
+            <span>Apply Code</span>
+          </>
+        )}
+      </button>
+
+      <span className="text-[11px] text-white/80 font-bold">
+        Min ₹{minOrderValue}
+      </span>
+    </div>
+  );
+};

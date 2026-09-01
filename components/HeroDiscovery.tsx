@@ -1,12 +1,92 @@
 'use client';
 
 import React from 'react';
-import { useApp } from '@/context/AppContext';
-import { Search, MapPin, Sparkles, ArrowRight, ShieldCheck, Flame, MessageCircle, QrCode } from 'lucide-react';
 import Image from 'next/image';
+import { useApp } from '@/context/AppContext';
+import { Search, Sparkles, ArrowRight, ShieldCheck, Flame, MessageCircle, QrCode } from 'lucide-react';
+import type { BannerRecord } from '@/lib/types';
+
+const HERO_THEME_GRADIENTS: Record<string, string> = {
+  orange: 'from-zinc-900 via-neutral-900 to-zinc-900',
+  rose: 'from-zinc-900 via-neutral-900 to-zinc-900',
+  emerald: 'from-zinc-900 via-neutral-900 to-zinc-900',
+  violet: 'from-zinc-900 via-neutral-900 to-zinc-900',
+  zinc: 'from-zinc-900 via-neutral-900 to-zinc-900',
+};
+
+/** Admin-managed hero banner — full-bleed image with overlay content. */
+const ManagedHeroBanner: React.FC<{ banner: BannerRecord }> = ({ banner }) => {
+  const { navigateTo } = useApp();
+
+  const handleCtaClick = () => {
+    if (!banner.ctaLink) return;
+    if (banner.ctaLink.startsWith('http')) {
+      window.open(banner.ctaLink, '_blank', 'noopener,noreferrer');
+    } else {
+      navigateTo(banner.ctaLink as Parameters<typeof navigateTo>[0]);
+    }
+  };
+
+  return (
+    <section className="relative overflow-hidden rounded-3xl text-white shadow-xl mb-8 min-h-[320px] sm:min-h-[380px] flex items-center">
+      {banner.image ? (
+        <Image
+          src={banner.image}
+          alt={banner.title}
+          fill
+          sizes="100vw"
+          className="object-cover"
+          priority
+        />
+      ) : (
+        <div className={`absolute inset-0 bg-gradient-to-r ${HERO_THEME_GRADIENTS[banner.theme ?? 'orange']}`} />
+      )}
+
+      {/* Ambient lighting + readability overlay */}
+      <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-orange-600/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-black/20" />
+
+      <div className="relative max-w-7xl mx-auto w-full p-6 sm:p-8 md:p-10">
+        <div className="max-w-xl">
+          {banner.badge && (
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/20 border border-orange-500/30 text-orange-300 text-xs font-bold mb-4 backdrop-blur-xs">
+              <Flame className="w-3.5 h-3.5 text-orange-400 fill-orange-400" />
+              <span>{banner.badge}</span>
+            </div>
+          )}
+
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white leading-tight">
+            {banner.title}
+          </h1>
+
+          {banner.subtitle && (
+            <p className="text-sm sm:text-base text-zinc-200 mt-3 font-normal leading-relaxed">
+              {banner.subtitle}
+            </p>
+          )}
+
+          {banner.ctaText && banner.ctaLink && (
+            <button
+              onClick={handleCtaClick}
+              className="mt-6 inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3.5 rounded-2xl text-sm font-black shadow-lg transition-colors"
+            >
+              {banner.ctaText}
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+};
 
 export const HeroDiscovery: React.FC = () => {
-  const { navigateTo, restaurantProfile, setOrderType } = useApp();
+  const { navigateTo, restaurantProfile, setOrderType, activeHeroBanner } = useApp();
+
+  // Admin-managed hero banner takes priority; falls back to the default discovery hero.
+  if (activeHeroBanner) {
+    return <ManagedHeroBanner banner={activeHeroBanner} />;
+  }
 
   return (
     <section className="relative overflow-hidden rounded-3xl bg-linear-to-r from-zinc-900 via-neutral-900 to-zinc-900 text-white shadow-xl mb-8">
@@ -25,7 +105,7 @@ export const HeroDiscovery: React.FC = () => {
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white leading-tight">
             {restaurantProfile.name} <br className="hidden sm:inline" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-300 to-yellow-400">
-              Kitchen &amp; Dining
+              Kitchen & Dining
             </span>
           </h1>
 

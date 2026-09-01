@@ -38,6 +38,7 @@ export interface RestaurantCloudData {
     coupons?: unknown;
     customers?: unknown;
     announcement?: unknown;
+    banners?: unknown;
     updatedAt?: string;
 }
 

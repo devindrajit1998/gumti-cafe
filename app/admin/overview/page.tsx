@@ -204,20 +204,19 @@ export default function AdminOverviewPage() {
         <p className="text-xs text-orange-100 mb-5">Jump to any section to manage your restaurant instantly.</p>
         <div className="flex flex-wrap gap-3">
           {[
-            { href: '/admin/menu',          icon: Utensils,  label: 'Add New Dish',          white: true },
-            { href: '/admin/qr-tables',     icon: QrCode,    label: 'Print Table QRs',        white: false },
-            { href: '/admin/coupons',        icon: Tag,       label: 'Create Discount Code',   white: false },
-            { href: '/admin/announcements', icon: Megaphone, label: 'Update Announcement',    white: false },
-            { href: '/admin/settings',      icon: Sliders,   label: 'Store Settings',         white: false },
+            { href: '/admin/menu', icon: Utensils, label: 'Add New Dish', white: true },
+            { href: '/admin/qr-tables', icon: QrCode, label: 'Print Table QRs', white: false },
+            { href: '/admin/coupons', icon: Tag, label: 'Create Discount Code', white: false },
+            { href: '/admin/banners', icon: Megaphone, label: 'Manage Banners', white: false },
+            { href: '/admin/settings', icon: Sliders, label: 'Store Settings', white: false },
           ].map(({ href, icon: Icon, label, white }) => (
             <Link
               key={href}
               href={href}
-              className={`px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all ${
-                white
+              className={`px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all ${white
                   ? 'bg-white text-orange-700 hover:bg-orange-50'
                   : 'bg-black/20 hover:bg-black/30 text-white backdrop-blur-sm'
-              }`}
+                }`}
             >
               <Icon className="w-4 h-4" />
               {label}

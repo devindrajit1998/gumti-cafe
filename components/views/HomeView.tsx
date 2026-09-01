@@ -14,6 +14,8 @@ import {
   SlidersHorizontal,
   ChevronLeft,
   ChevronDown,
+  ChevronUp,
+  Utensils,
   X,
   Tag,
   ArrowRight,
@@ -70,6 +72,7 @@ export const HomeView: React.FC = () => {
   const [dietFilter, setDietFilter] = useState<'all' | 'veg' | 'non-veg' | 'spicy' | 'rating'>('all');
   const [currentSlide, setCurrentSlide] = useState(0);
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
+  const [isMenuDrawerOpen, setIsMenuDrawerOpen] = useState(false);
   const categorySliderRef = useRef<HTMLDivElement>(null);
   const seededDefaultsRef = useRef(false);
 
@@ -78,12 +81,8 @@ export const HomeView: React.FC = () => {
   useEffect(() => {
     if (restaurantMenu.length === 0 || seededDefaultsRef.current) return;
     seededDefaultsRef.current = true;
-    const cats = Array.from(new Set(restaurantMenu.map((item) => item.category)));
-    const defaults: Record<string, boolean> = {};
-    cats.forEach((cat, idx) => {
-      defaults[cat] = idx !== 0; // collapse every category except the first
-    });
-    setCollapsedCategories(defaults);
+    // Default all categories to open (expanded) for an effortless browsing experience
+    setCollapsedCategories({});
   }, [restaurantMenu]);
 
   const toggleCategoryCollapse = (category: string) => {
@@ -122,7 +121,8 @@ export const HomeView: React.FC = () => {
       title: restaurantProfile.name,
       subtitle: restaurantProfile.tagline || 'Good food. Good adda.',
       description: `Fresh coffee, chai, momos, burgers and more — ordered direct via WhatsApp in ${restaurantProfile.estimatedDeliveryTime}.`,
-      image: restaurantProfile.bannerImage || CATEGORY_IMAGES['Coffee'],
+      image: restaurantProfile.bannerImage || 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1200&auto=format&fit=crop&q=80',
+      imageMobile: restaurantProfile.bannerImageMobile || restaurantProfile.bannerImage || 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=700&auto=format&fit=crop&q=80',
       rating: avgRating,
       prepTime: restaurantProfile.estimatedDeliveryTime,
       cost: costForTwo,
@@ -162,12 +162,21 @@ export const HomeView: React.FC = () => {
   const handleCategorySelect = (categoryId: string) => {
     if (categoryId === 'All') {
       setSelectedCategory(null);
-      // Smooth scroll down to all dishes
       const el = document.getElementById('menu-catalog');
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else {
-      setSelectedCategory(categoryId);
-      navigateTo('category-detail', { category: categoryId });
+      setSelectedCategory(null);
+      // Auto expand category if it was collapsed
+      setCollapsedCategories((prev) => ({ ...prev, [categoryId]: false }));
+      // Smooth scroll directly to the chosen category section
+      const safeId = `cat-sec-${categoryId.replace(/[^a-zA-Z0-9]/g, '-')}`;
+      const el = document.getElementById(safeId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        const catalogEl = document.getElementById('menu-catalog');
+        if (catalogEl) catalogEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }
   };
 
@@ -256,95 +265,101 @@ export const HomeView: React.FC = () => {
     <div className="space-y-6 pb-0 w-full">
 
       {/* 1. CINEMATIC RESTAURANT HERO SLIDER */}
-      <section className="relative rounded-3xl overflow-hidden bg-[#1E1B18] text-white border border-[#3A3530] shadow-md group">
-        {/* Background Slide Imagery */}
+      <section className="relative rounded-3xl overflow-hidden bg-[#1E1B18] text-white border border-[#3A3530] shadow-xl group min-h-[280px] sm:min-h-[340px] md:min-h-[380px] flex flex-col justify-between">
+        {/* Background Slide Imagery with Lighter Vibrant Overlay */}
         <div className="absolute inset-0 z-0">
-          <img
-            key={slide.id}
-            src={slide.image}
-            alt={slide.title}
-            className="w-full h-full object-cover object-right opacity-85 filter brightness-105 contrast-105 transition-all duration-700 ease-in-out"
-          />
-          {/* Subtle gradient for optimal text readability */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#141210]/95 via-[#141210]/75 md:via-[#141210]/45 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#141210]/60 via-transparent to-black/20" />
+          <picture>
+            {'imageMobile' in slide && slide.imageMobile ? (
+              <source media="(max-width: 640px)" srcSet={slide.imageMobile} />
+            ) : null}
+            <img
+              key={slide.id}
+              src={slide.image}
+              alt={slide.title}
+              className="w-full h-full object-cover object-center brightness-105 contrast-100 transition-all duration-700 ease-in-out"
+            />
+          </picture>
+          {/* Lightened gradient for vivid imagery with clean text readability */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/35 to-black/10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/15" />
         </div>
 
-        {/* Content Container with Increased Fixed Height */}
-        <div className="relative z-10 p-6 sm:p-9 md:p-10 flex flex-col justify-between h-[310px] sm:h-[340px] md:h-[380px]">
-          {/* Top Row: Rating Badge & Direct Action Buttons */}
-          <div className="flex items-center justify-between gap-4 shrink-0">
-            <div className="flex items-center gap-2">
-              <span className="bg-[#141210]/85 backdrop-blur-md border border-white/20 text-[#FAF9F5] px-3.5 py-1.5 rounded-lg font-bold flex items-center gap-1.5 text-xs shadow-xs">
+        {/* Content Container */}
+        <div className="relative z-10 p-4 sm:p-7 md:p-9 flex flex-col justify-between flex-1">
+          {/* Top Row: Tags & Direct Quick Actions */}
+          <div className="flex items-center justify-between gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="bg-white/15 backdrop-blur-md border border-white/20 text-[#FAF9F5] px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full font-bold flex items-center gap-1 text-[11px] sm:text-xs shadow-xs truncate">
                 <span>{slide.tag}</span>
               </span>
-              <span className="text-white hidden md:inline text-xs font-semibold bg-[#141210]/70 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/15">
+              <span className="text-white/90 hidden sm:inline text-xs font-semibold bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
                 {slide.cuisineTag}
               </span>
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-1.5 shrink-0">
               <button
                 onClick={handleOpenWhatsApp}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#22C55E] hover:bg-[#16A34A] text-white text-xs font-extrabold transition-all cursor-pointer shadow-md active:scale-95"
+                className="flex items-center gap-1 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-[#22C55E] hover:bg-[#16A34A] text-white text-[11px] sm:text-xs font-extrabold transition-all cursor-pointer shadow-md active:scale-95"
               >
-                <MessageCircle className="w-4 h-4" />
+                <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span>WhatsApp</span>
               </button>
               <a
                 href={`tel:${restaurantProfile.phone}`}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#141210]/80 hover:bg-[#141210] backdrop-blur-md border border-white/25 text-[#FAF9F5] text-xs font-bold transition-all active:scale-95 shadow-sm"
+                className="flex items-center gap-1 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-white/15 hover:bg-white/25 backdrop-blur-md border border-white/20 text-[#FAF9F5] text-[11px] sm:text-xs font-bold transition-all active:scale-95 shadow-sm"
               >
-                <Phone className="w-4 h-4 text-[#F8D6B2]" />
-                <span>Call</span>
+                <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#F8D6B2]" />
+                <span className="hidden sm:inline">Call</span>
               </a>
             </div>
           </div>
 
-          {/* Restaurant Editorial Title (Spacious with room for subtitle and description) */}
-          <div className="my-auto max-w-2xl drop-shadow-sm transition-all duration-300 space-y-2">
-            <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white leading-tight">
-              {slide.title} — <span className="text-[#F8D6B2]">{slide.subtitle}</span>
+          {/* Restaurant Editorial Title */}
+          <div className="my-3 sm:my-5 max-w-xl space-y-1.5">
+            <h1 className="font-serif text-xl sm:text-3xl md:text-4xl font-black tracking-tight text-white leading-tight drop-shadow-sm">
+              {slide.title}
             </h1>
-            <p className="text-white/90 text-sm sm:text-base font-medium leading-relaxed drop-shadow-xs max-w-xl line-clamp-2 h-[3rem]">
+            <p className="text-white/85 text-xs sm:text-sm md:text-base font-medium leading-snug drop-shadow-xs max-w-lg line-clamp-2">
               {slide.description}
             </p>
           </div>
 
           {/* Bottom Row: Info Pills + Slide Indicator Dots */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-2.5 border-t border-white/20 shrink-0">
+          <div className="flex items-center justify-between gap-2 pt-2.5 sm:pt-3 border-t border-white/15 shrink-0">
             {/* Info Pills */}
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-white font-medium">
-              <div className="flex items-center gap-1.5 bg-[#141210]/60 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/10">
-                <Star className="w-3.5 h-3.5 text-[#FBBF24] fill-[#FBBF24]" />
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-white font-medium">
+              <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg border border-white/10">
+                <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#FBBF24] fill-[#FBBF24]" />
                 <span className="font-bold text-white">{slide.rating}</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-[#141210]/60 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/10">
-                <Clock className="w-3.5 h-3.5 text-[#F8D6B2]" />
+              <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg border border-white/10">
+                <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#F8D6B2]" />
                 <span className="font-bold text-white">{slide.prepTime}</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-[#141210]/60 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/10">
+              <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg border border-white/10">
                 <span className="font-bold text-white">{slide.cost}</span>
               </div>
             </div>
 
             {/* Slider Navigation Controls (Dots & Arrows) */}
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-1.5 shrink-0">
               <button
                 onClick={() => setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length)}
-                className="w-8 h-8 rounded-full bg-[#141210]/70 hover:bg-[#141210] border border-white/20 flex items-center justify-center text-white transition-all cursor-pointer"
+                className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-black/40 hover:bg-black/70 border border-white/20 flex items-center justify-center text-white transition-all cursor-pointer"
                 title="Previous Slide"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" />
               </button>
 
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1 bg-black/30 backdrop-blur-sm px-2 py-1 rounded-full border border-white/10">
                 {heroSlides.map((_, idx) => (
                   <button
                     key={idx}
                     onClick={() => setCurrentSlide(idx)}
-                    className={`h-2 rounded-full transition-all cursor-pointer ${currentSlide === idx ? 'w-6 bg-[#F8D6B2]' : 'w-2 bg-white/40 hover:bg-white/70'
-                      }`}
+                    className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                      currentSlide === idx ? 'w-4 sm:w-5 bg-[#F8D6B2]' : 'w-1.5 bg-white/40 hover:bg-white/70'
+                    }`}
                     title={`Slide ${idx + 1}`}
                   />
                 ))}
@@ -352,13 +367,12 @@ export const HomeView: React.FC = () => {
 
               <button
                 onClick={() => setCurrentSlide((prev) => (prev + 1) % heroSlides.length)}
-                className="w-8 h-8 rounded-full bg-[#141210]/70 hover:bg-[#141210] border border-white/20 flex items-center justify-center text-white transition-all cursor-pointer"
+                className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-black/40 hover:bg-black/70 border border-white/20 flex items-center justify-center text-white transition-all cursor-pointer"
                 title="Next Slide"
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
               </button>
             </div>
-
           </div>
         </div>
       </section>
@@ -366,31 +380,33 @@ export const HomeView: React.FC = () => {
       {/* 2. ORDER TYPE & PROMO VOUCHER (Unified & Clean) */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Left 8 Cols: Visual 3-Option Dining Selector */}
-        <div className="lg:col-span-8 bg-white rounded-3xl p-5 border border-[#E8E5DD] shadow-xs">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h3 className="font-bold text-sm text-[#1A1816]">
+        <div className="lg:col-span-8 bg-white rounded-3xl p-4 sm:p-5 border border-[#E8E5DD] shadow-xs">
+          <div className="flex items-center justify-between gap-2 mb-3.5 flex-wrap sm:flex-nowrap">
+            <div className="min-w-0">
+              <h3 className="font-bold text-sm sm:text-base text-[#1A1816] leading-tight">
                 How would you like your food?
               </h3>
-              <p className="text-xs text-[#7D7872]">Instant kitchen preparation &amp; dispatch</p>
+              <p className="text-[11px] sm:text-xs text-[#7D7872] mt-0.5">Instant kitchen preparation &amp; dispatch</p>
             </div>
-            <span className="text-[11px] font-bold text-[#7C203A] bg-[#FBE4CB] px-2.5 py-1 rounded-full">
+            <span className="text-[10px] sm:text-[11px] font-bold text-[#7C203A] bg-[#FBE4CB] px-2.5 py-1 rounded-full shrink-0">
               ⚡ LIVE KITCHEN
             </span>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
             {/* Home Delivery */}
             <button
               onClick={() => setOrderType('delivery')}
-              className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${orderType === 'delivery'
+              className={`p-2.5 sm:p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${orderType === 'delivery'
                 ? 'border-[#7C203A] bg-[#FBE4CB] ring-2 ring-[#7C203A]/20 shadow-xs'
                 : 'border-[#E8E5DD] bg-[#FAF9F5] hover:bg-white'
                 }`}
             >
-              <span className="text-2xl block mb-1">🚴</span>
-              <span className="text-xs font-bold text-[#1A1816] block">Home Delivery</span>
-              <span className={`text-[11px] font-semibold block mt-0.5 ${orderType === 'delivery' ? 'text-[#7C203A]' : 'text-[#7D7872]'}`}>
+              <div>
+                <span className="text-xl sm:text-2xl block mb-1">🚴</span>
+                <span className="text-[11px] sm:text-xs font-bold text-[#1A1816] block leading-tight">Home Delivery</span>
+              </div>
+              <span className={`text-[10px] sm:text-[11px] font-semibold block mt-1.5 ${orderType === 'delivery' ? 'text-[#7C203A]' : 'text-[#7D7872]'}`}>
                 25–40 mins
               </span>
             </button>
@@ -398,14 +414,16 @@ export const HomeView: React.FC = () => {
             {/* Self Pickup */}
             <button
               onClick={() => setOrderType('pickup')}
-              className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${orderType === 'pickup'
+              className={`p-2.5 sm:p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${orderType === 'pickup'
                 ? 'border-[#7C203A] bg-[#FBE4CB] ring-2 ring-[#7C203A]/20 shadow-xs'
                 : 'border-[#E8E5DD] bg-[#FAF9F5] hover:bg-white'
                 }`}
             >
-              <span className="text-2xl block mb-1">🛍️</span>
-              <span className="text-xs font-bold text-[#1A1816] block">Self Pickup</span>
-              <span className={`text-[11px] font-semibold block mt-0.5 ${orderType === 'pickup' ? 'text-[#7C203A]' : 'text-[#7D7872]'}`}>
+              <div>
+                <span className="text-xl sm:text-2xl block mb-1">🛍️</span>
+                <span className="text-[11px] sm:text-xs font-bold text-[#1A1816] block leading-tight">Self Pickup</span>
+              </div>
+              <span className={`text-[10px] sm:text-[11px] font-semibold block mt-1.5 ${orderType === 'pickup' ? 'text-[#7C203A]' : 'text-[#7D7872]'}`}>
                 15–20 mins
               </span>
             </button>
@@ -413,14 +431,16 @@ export const HomeView: React.FC = () => {
             {/* Dine-In Table */}
             <button
               onClick={() => setOrderType('dine_in')}
-              className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${orderType === 'dine_in'
+              className={`p-2.5 sm:p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${orderType === 'dine_in'
                 ? 'border-[#7C203A] bg-[#FBE4CB] ring-2 ring-[#7C203A]/20 shadow-xs'
                 : 'border-[#E8E5DD] bg-[#FAF9F5] hover:bg-white'
                 }`}
             >
-              <span className="text-2xl block mb-1">🍽️</span>
-              <span className="text-xs font-bold text-[#1A1816] block">Dine-In Table</span>
-              <span className={`text-[11px] font-semibold block mt-0.5 ${orderType === 'dine_in' ? 'text-[#7C203A]' : 'text-[#7D7872]'}`}>
+              <div>
+                <span className="text-xl sm:text-2xl block mb-1">🍽️</span>
+                <span className="text-[11px] sm:text-xs font-bold text-[#1A1816] block leading-tight">Dine-In Table</span>
+              </div>
+              <span className={`text-[10px] sm:text-[11px] font-semibold block mt-1.5 ${orderType === 'dine_in' ? 'text-[#7C203A]' : 'text-[#7D7872]'}`}>
                 Order at table
               </span>
             </button>
@@ -722,31 +742,46 @@ export const HomeView: React.FC = () => {
               <div
                 key={sec.category}
                 id={`cat-sec-${sec.category.replace(/[^a-zA-Z0-9]/g, '-')}`}
-                className="bg-[#FFFDF9] rounded-3xl p-5 sm:p-6 border border-[#E9C5A7] shadow-xs space-y-4 scroll-mt-32 transition-all duration-300"
+                className="bg-[#FFFDF9] rounded-3xl p-4 sm:p-6 border border-[#E9C5A7] shadow-xs space-y-4 scroll-mt-32 transition-all duration-300 hover:border-[#7C203A]/40"
               >
                 <div
                   onClick={() => toggleCategoryCollapse(sec.category)}
-                  className={`flex items-center justify-between cursor-pointer select-none group/hdr ${isCollapsed ? 'pb-0 border-b-0' : 'border-b border-[#F3DCC5] pb-3'
+                  className={`flex items-center justify-between gap-3 cursor-pointer select-none group/hdr ${isCollapsed ? 'pb-0 border-b-0' : 'border-b border-[#F3DCC5] pb-3'
                     }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">{CATEGORY_ICONS[sec.category] || '🍽️'}</span>
-                    <h3 className="font-serif text-lg sm:text-xl font-black text-[#3D1020] group-hover/hdr:text-[#7C203A] transition-colors">
-                      {sec.category}
-                    </h3>
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    {/* Category Icon Emblem */}
+                    <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#FBE4CB] border border-[#E9B88F] flex items-center justify-center text-lg sm:text-xl shrink-0 group-hover/hdr:scale-105 transition-transform shadow-2xs">
+                      {CATEGORY_ICONS[sec.category] || '🍽️'}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-serif text-base sm:text-lg lg:text-xl font-black text-[#3D1020] group-hover/hdr:text-[#7C203A] transition-colors leading-tight">
+                          {sec.category}
+                        </h3>
+                        <span className="text-[10px] sm:text-[11px] font-bold text-[#7C203A] bg-[#FBE4CB] px-2 py-0.5 rounded-md border border-[#E9B88F]">
+                          from ₹{Math.min(...sec.items.map((i) => i.price))}
+                        </span>
+                      </div>
+                      <p className="text-[11px] sm:text-xs text-[#947362] truncate mt-0.5">
+                        {sec.items.slice(0, 3).map((i) => i.name).join(', ')}
+                        {sec.items.length > 3 ? ' & more' : ''}
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-[#947362] bg-[#FFF4E8] px-2.5 py-1 rounded-full border border-[#E9C5A7]">
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[11px] sm:text-xs font-bold text-[#947362] bg-[#FFF4E8] px-2.5 py-1 rounded-full border border-[#E9C5A7] whitespace-nowrap">
                       {sec.items.length} {sec.items.length === 1 ? 'item' : 'items'}
                     </span>
                     <button
                       type="button"
                       aria-label={isCollapsed ? 'Expand category' : 'Collapse category'}
-                      className="w-7 h-7 rounded-full bg-[#FFF4E8] border border-[#E9C5A7] flex items-center justify-center text-[#7C203A] group-hover/hdr:bg-[#FBE4CB] transition-all"
+                      className="w-8 h-8 rounded-full bg-[#FFF4E8] border border-[#E9C5A7] flex items-center justify-center text-[#7C203A] group-hover/hdr:bg-[#FBE4CB] transition-all shrink-0"
                     >
                       <ChevronDown
-                        className={`w-4 h-4 transition-transform duration-300 ${isCollapsed ? '-rotate-90' : 'rotate-0'
+                        className={`w-4 h-4 transition-transform duration-300 ${isCollapsed ? '-rotate-90 text-[#947362]' : 'rotate-0 text-[#7C203A]'
                           }`}
                       />
                     </button>
@@ -1025,7 +1060,7 @@ export const HomeView: React.FC = () => {
               </p>
               <button
                 onClick={() => navigateTo('qr-code')}
-                className="mt-2 text-xs font-bold text-[#7C203A] hover:underline cursor-pointer"
+                className="mt-1 text-xs font-bold text-[#7C203A] hover:underline cursor-pointer"
               >
                 View Table QR Code →
               </button>
@@ -1039,9 +1074,90 @@ export const HomeView: React.FC = () => {
               />
             </div>
           </div>
-
         </div>
       </div>
+
+      {/* 8. SWIGGY/ZOMATO STYLE FLOATING "MENU" BOTTOM BUTTON */}
+      <div 
+        className="fixed left-1/2 -translate-x-1/2 z-40"
+        style={{ bottom: 'calc(4.75rem + env(safe-area-inset-bottom, 0px))' }}
+      >
+        <button
+          onClick={() => setIsMenuDrawerOpen(true)}
+          className="flex items-center gap-2 px-5 py-2.5 bg-[#3D1020] hover:bg-[#5D162C] text-[#F8D6B2] rounded-full shadow-2xl border-2 border-[#E9C5A7] text-xs font-black cursor-pointer transition-all active:scale-95 group tracking-wide"
+        >
+          <Utensils className="w-4 h-4 text-[#F8D6B2] group-hover:rotate-12 transition-transform" />
+          <span className="text-white">BROWSE MENU</span>
+          <span className="bg-[#7C203A] text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
+            {groupedSections.length}
+          </span>
+        </button>
+      </div>
+
+      {/* QUICK MENU CATEGORIES BOTTOM SHEET MODAL */}
+      {isMenuDrawerOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div
+            className="fixed inset-0"
+            onClick={() => setIsMenuDrawerOpen(false)}
+          />
+          <div className="relative w-full sm:max-w-md bg-[#FFFDF9] rounded-t-3xl sm:rounded-3xl border border-[#E9C5A7] shadow-2xl p-5 space-y-4 max-h-[80vh] flex flex-col z-10 animate-in slide-in-from-bottom duration-300">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-[#F3DCC5]">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-[#FBE4CB] flex items-center justify-center text-[#7C203A]">
+                  <Utensils className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-black text-base text-[#3D1020]">Menu Categories</h3>
+                  <p className="text-[11px] text-[#947362]">{restaurantMenu.length} dishes available</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsMenuDrawerOpen(false)}
+                className="w-8 h-8 rounded-full bg-[#FFF4E8] text-[#7C203A] hover:bg-[#FBE4CB] flex items-center justify-center cursor-pointer transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Category List (Clean, smooth scrolling without ugly scrollbar) */}
+            <div className="overflow-y-auto no-scrollbar space-y-2 py-1 pr-0.5 overscroll-contain">
+              {groupedSections.map((sec) => (
+                <button
+                  key={sec.category}
+                  onClick={() => {
+                    setIsMenuDrawerOpen(false);
+                    handleCategorySelect(sec.category);
+                  }}
+                  className="w-full flex items-center justify-between p-3 rounded-2xl bg-[#FFF4E8]/60 hover:bg-[#FBE4CB] border border-[#E9C5A7] transition-all cursor-pointer text-left group"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl group-hover:scale-110 transition-transform">
+                      {CATEGORY_ICONS[sec.category] || '🍽️'}
+                    </span>
+                    <div>
+                      <h4 className="font-bold text-xs sm:text-sm text-[#3D1020] group-hover:text-[#7C203A] transition-colors">
+                        {sec.category}
+                      </h4>
+                      <span className="text-[10px] text-[#947362] font-semibold">
+                        from ₹{Math.min(...sec.items.map((i) => i.price))}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-[#7C203A] bg-white px-2.5 py-1 rounded-full border border-[#E9B88F]">
+                      {sec.items.length}
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-[#947362] group-hover:text-[#7C203A] group-hover:translate-x-0.5 transition-all" />
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -35,21 +35,6 @@ export const MobileBottomNav: React.FC = () => {
 
   return (
     <>
-      {/* Floating AI Sommelier Quick Trigger on Mobile */}
-      {!showFloatingCart && activeView !== 'cart' && activeView !== 'checkout' && (
-        <div
-          className="md:hidden fixed right-4 z-40 animate-in fade-in slide-in-from-bottom-3 duration-300"
-          style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }}
-        >
-          <button
-            onClick={() => setIsAiAssistantOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#1A1816] text-[#FAF9F5] rounded-full shadow-lg border border-[#2E2B27] active:scale-95 transition-all text-xs font-bold cursor-pointer"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-[#C59A3F]" />
-            <span>AI Sommelier</span>
-          </button>
-        </div>
-      )}
 
       {/* Floating Cart CTA bar on mobile */}
       {showFloatingCart && (

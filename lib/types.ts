@@ -55,6 +55,7 @@ export interface RestaurantProfile {
   openingHours: string;
   isOpen: boolean;
   bannerImage: string;
+  bannerImageMobile?: string;
   logoImage: string;
   upiId: string;
   upiPayeeName: string;
@@ -222,6 +223,43 @@ export interface BannerAnnouncement {
   couponCode?: string;
 }
 
+export type BannerType = 'announcement' | 'hero' | 'promo';
+
+export type BannerTheme = 'orange' | 'rose' | 'emerald' | 'violet' | 'zinc';
+
+export interface BannerRecord {
+  id: string;
+  type: BannerType;
+  enabled: boolean;
+  badge?: string;
+  title: string;
+  subtitle?: string;
+  image?: string; // ImageKit URL (hero/promo banners)
+  ctaText?: string;
+  ctaLink?: string; // ActiveView route (e.g. 'menu', 'offers') or external URL
+  couponCode?: string;
+  theme?: BannerTheme;
+  startDate?: string; // ISO date string (YYYY-MM-DD) — banner becomes visible
+  endDate?: string; // ISO date string (YYYY-MM-DD) — banner auto-hides after
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Returns true when a banner is enabled and within its scheduled window. */
+export const isBannerActive = (banner: BannerRecord, now: Date = new Date()): boolean => {
+  if (!banner.enabled) return false;
+  if (banner.startDate) {
+    const start = new Date(`${banner.startDate}T00:00:00`);
+    if (now < start) return false;
+  }
+  if (banner.endDate) {
+    const end = new Date(`${banner.endDate}T23:59:59`);
+    if (now > end) return false;
+  }
+  return true;
+};
+
 export type TableBookingStatus = 'confirmed' | 'pending' | 'cancelled' | 'completed';
 
 export interface TableBookingConfig {
@@ -266,6 +304,7 @@ export interface ZaikaBackupData {
   coupons: Coupon[];
   customers: CustomerRecord[];
   announcement: BannerAnnouncement;
+  banners?: BannerRecord[];
 }
 
 export type ActiveView =

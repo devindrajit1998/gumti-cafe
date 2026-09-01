@@ -17,6 +17,9 @@ import {
   VegType,
   CustomerRecord,
   BannerAnnouncement,
+  BannerRecord,
+  BannerType,
+  isBannerActive,
   TableBooking,
   TableBookingStatus,
   TableBookingConfig,
@@ -30,6 +33,8 @@ import {
   ALL_MENU_ITEMS,
   DEFAULT_CUSTOMERS,
   DEFAULT_ANNOUNCEMENT,
+  DEFAULT_BANNERS,
+  migrateLegacyAnnouncement,
   DEFAULT_TABLE_BOOKING_CONFIG,
   RESTAURANT_MENU_CATEGORIES,
 } from '@/lib/data';
@@ -47,6 +52,16 @@ let groupOrderCounter = 1000;
 function createNewGroupCode(): string {
   groupOrderCounter += 1;
   return `ZK-${groupOrderCounter}`;
+}
+
+let bannerCounter = 0;
+function createBannerId(): string {
+  bannerCounter += 1;
+  return `banner-${Date.now()}-${bannerCounter}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function createBannerTimestamp(): string {
+  return new Date().toISOString();
 }
 
 export interface GuestCustomerInfo {
@@ -152,6 +167,15 @@ interface AppContextType {
   deleteAdminCategory: (category: string) => void;
   bannerAnnouncement: BannerAnnouncement;
   updateBannerAnnouncement: (updated: Partial<BannerAnnouncement>) => void;
+  adminBanners: BannerRecord[];
+  addAdminBanner: (banner: Omit<BannerRecord, 'id' | 'createdAt' | 'updatedAt' | 'sortOrder'>) => BannerRecord;
+  updateAdminBanner: (id: string, updated: Partial<BannerRecord>) => void;
+  deleteAdminBanner: (id: string) => void;
+  toggleAdminBanner: (id: string) => void;
+  moveAdminBanner: (id: string, direction: 'up' | 'down') => void;
+  activeAnnouncementBanners: BannerRecord[];
+  activeHeroBanner: BannerRecord | null;
+  activePromoBanners: BannerRecord[];
   adminCustomers: CustomerRecord[];
   addAdminCustomer: (customer: CustomerRecord) => void;
   updateAdminCustomer: (id: string, updated: Partial<CustomerRecord>) => void;
@@ -494,11 +518,11 @@ export const AppProvider: React.FC<{
   const [restaurantProfile, setRestaurantProfile] = useState<RestaurantProfile>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('zaika_restaurant_profile');
+        const saved = localStorage.getItem('gumti_cafe_profile');
         if (saved) {
           const parsed = JSON.parse(saved) as RestaurantProfile;
-          if (parsed.name === DEFAULT_RESTAURANT_PROFILE.name || parsed.logoImage === DEFAULT_RESTAURANT_PROFILE.logoImage) {
-            return parsed;
+          if (parsed && typeof parsed === 'object') {
+            return { ...DEFAULT_RESTAURANT_PROFILE, ...parsed };
           }
         }
       } catch { }
@@ -510,7 +534,7 @@ export const AppProvider: React.FC<{
   const [restaurantMenu, setRestaurantMenu] = useState<MenuItem[]>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('zaika_restaurant_menu');
+        const saved = localStorage.getItem('gumti_cafe_menu');
         if (saved) {
           const parsed = JSON.parse(saved) as MenuItem[];
           const isGhutiCatalog = Array.isArray(parsed) && parsed.some((item) => item.id.startsWith('ghuti-'));
@@ -567,7 +591,7 @@ export const AppProvider: React.FC<{
     setRestaurantProfile((prev) => {
       const next = { ...prev, ...updated };
       try {
-        localStorage.setItem('zaika_restaurant_profile', JSON.stringify(next));
+        localStorage.setItem('gumti_cafe_profile', JSON.stringify(next));
       } catch (e) {
         console.error(e);
       }
@@ -593,7 +617,7 @@ export const AppProvider: React.FC<{
     setRestaurantMenu((prev) => {
       const next = [newItem, ...prev];
       try {
-        localStorage.setItem('zaika_restaurant_menu', JSON.stringify(next));
+        localStorage.setItem('gumti_cafe_menu', JSON.stringify(next));
       } catch (e) {
         console.error(e);
       }
@@ -607,7 +631,7 @@ export const AppProvider: React.FC<{
     setRestaurantMenu((prev) => {
       const next = prev.map((it) => (it.id === id ? { ...it, ...updated, updatedAt: new Date().toISOString() } : it));
       try {
-        localStorage.setItem('zaika_restaurant_menu', JSON.stringify(next));
+        localStorage.setItem('gumti_cafe_menu', JSON.stringify(next));
       } catch (e) {
         console.error(e);
       }
@@ -621,7 +645,7 @@ export const AppProvider: React.FC<{
     setRestaurantMenu((prev) => {
       const next = prev.filter((it) => it.id !== id);
       try {
-        localStorage.setItem('zaika_restaurant_menu', JSON.stringify(next));
+        localStorage.setItem('gumti_cafe_menu', JSON.stringify(next));
       } catch (e) {
         console.error(e);
       }
@@ -641,7 +665,7 @@ export const AppProvider: React.FC<{
         return it;
       });
       try {
-        localStorage.setItem('zaika_restaurant_menu', JSON.stringify(next));
+        localStorage.setItem('gumti_cafe_menu', JSON.stringify(next));
       } catch (e) {
         console.error(e);
       }
@@ -653,7 +677,7 @@ export const AppProvider: React.FC<{
     const selectedIds = new Set(ids);
     setRestaurantMenu((prev) => {
       const next = prev.map((item) => selectedIds.has(item.id) ? { ...item, isAvailable, updatedAt: new Date().toISOString() } : item);
-      try { localStorage.setItem('zaika_restaurant_menu', JSON.stringify(next)); } catch (e) { console.error(e); }
+      try { localStorage.setItem('gumti_cafe_menu', JSON.stringify(next)); } catch (e) { console.error(e); }
       return next;
     });
     showToast(`${ids.length} dishes updated`, isAvailable ? 'Marked in stock' : 'Marked sold out', 'success');
@@ -663,7 +687,7 @@ export const AppProvider: React.FC<{
     const selectedIds = new Set(ids);
     setRestaurantMenu((prev) => {
       const next = prev.filter((item) => !selectedIds.has(item.id));
-      try { localStorage.setItem('zaika_restaurant_menu', JSON.stringify(next)); } catch (e) { console.error(e); }
+      try { localStorage.setItem('gumti_cafe_menu', JSON.stringify(next)); } catch (e) { console.error(e); }
       return next;
     });
     showToast(`${ids.length} dishes deleted`, 'Menu catalog updated', 'info');
@@ -673,7 +697,7 @@ export const AppProvider: React.FC<{
   const resetMenuToDefault = () => {
     setRestaurantMenu(INITIAL_RESTAURANT_ITEMS);
     try {
-      localStorage.removeItem('zaika_restaurant_menu');
+      localStorage.removeItem('gumti_cafe_menu');
     } catch (e) {
       console.error(e);
     }
@@ -993,7 +1017,7 @@ export const AppProvider: React.FC<{
     setRestaurantMenu((prev) => {
       const next = prev.map((item) => (item.category === oldCat ? { ...item, category: trimmed } : item));
       try {
-        localStorage.setItem('zaika_restaurant_menu', JSON.stringify(next));
+        localStorage.setItem('gumti_cafe_menu', JSON.stringify(next));
       } catch { }
       return next;
     });
@@ -1152,6 +1176,7 @@ export const AppProvider: React.FC<{
     coupons: adminCoupons,
     customers: adminCustomers,
     announcement: bannerAnnouncement,
+    banners: adminBanners,
   });
 
   const importFullDatabase = (data: unknown): { success: boolean; error?: string } => {
@@ -1169,8 +1194,12 @@ export const AppProvider: React.FC<{
       setAdminCoupons(backup.coupons);
       setAdminCustomers(backup.customers);
       setBannerAnnouncement(backup.announcement);
-      localStorage.setItem('zaika_restaurant_profile', JSON.stringify(backup.profile));
-      localStorage.setItem('zaika_restaurant_menu', JSON.stringify(backup.menu));
+      if (Array.isArray(backup.banners)) {
+        setAdminBanners(backup.banners);
+        localStorage.setItem('zaika_banners', JSON.stringify(backup.banners));
+      }
+      localStorage.setItem('gumti_cafe_profile', JSON.stringify(backup.profile));
+      localStorage.setItem('gumti_cafe_menu', JSON.stringify(backup.menu));
       localStorage.setItem('zaika_past_orders', JSON.stringify(backup.orders));
       localStorage.setItem('zaika_categories', JSON.stringify(backup.categories));
       localStorage.setItem('zaika_coupons', JSON.stringify(backup.coupons));
@@ -1206,6 +1235,117 @@ export const AppProvider: React.FC<{
     });
     showToast('Banner Announcement Updated! 📢', undefined, 'success');
   };
+
+  // Banner Management System (announcement / hero / promo banners)
+  const [adminBanners, setAdminBanners] = useState<BannerRecord[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('zaika_banners');
+        if (saved) {
+          const parsed = JSON.parse(saved) as BannerRecord[];
+          if (Array.isArray(parsed)) return parsed;
+        }
+        // Migrate legacy announcement banner on first load
+        const legacySaved = localStorage.getItem('zaika_banner_announcement');
+        if (legacySaved) {
+          const legacy = JSON.parse(legacySaved) as BannerAnnouncement;
+          const migrated = migrateLegacyAnnouncement(legacy);
+          return [
+            migrated,
+            ...DEFAULT_BANNERS.filter((b) => b.type !== 'announcement'),
+          ];
+        }
+      } catch { }
+    }
+    return DEFAULT_BANNERS;
+  });
+
+  const persistBanners = (banners: BannerRecord[]) => {
+    try {
+      localStorage.setItem('zaika_banners', JSON.stringify(banners));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const addAdminBanner = (banner: Omit<BannerRecord, 'id' | 'createdAt' | 'updatedAt' | 'sortOrder'>): BannerRecord => {
+    const now = createBannerTimestamp();
+    const typeOrder = adminBanners.filter((b) => b.type === banner.type).length;
+    const newBanner: BannerRecord = {
+      ...banner,
+      id: createBannerId(),
+      sortOrder: typeOrder,
+      createdAt: now,
+      updatedAt: now,
+    };
+    const next = [...adminBanners, newBanner];
+    setAdminBanners(next);
+    persistBanners(next);
+    showToast('Banner Created! 🎉', undefined, 'success');
+    return newBanner;
+  };
+
+  const updateAdminBanner = (id: string, updated: Partial<BannerRecord>) => {
+    const next = adminBanners.map((b) =>
+      b.id === id ? { ...b, ...updated, updatedAt: new Date().toISOString() } : b,
+    );
+    setAdminBanners(next);
+    persistBanners(next);
+    showToast('Banner Updated! ✅', undefined, 'success');
+  };
+
+  const deleteAdminBanner = (id: string) => {
+    const next = adminBanners.filter((b) => b.id !== id);
+    setAdminBanners(next);
+    persistBanners(next);
+    showToast('Banner Deleted', undefined, 'info');
+  };
+
+  const toggleAdminBanner = (id: string) => {
+    const next = adminBanners.map((b) =>
+      b.id === id ? { ...b, enabled: !b.enabled, updatedAt: new Date().toISOString() } : b,
+    );
+    setAdminBanners(next);
+    persistBanners(next);
+  };
+
+  const moveAdminBanner = (id: string, direction: 'up' | 'down') => {
+    const banner = adminBanners.find((b) => b.id === id);
+    if (!banner) return;
+    const sameType = adminBanners
+      .filter((b) => b.type === banner.type)
+      .toSorted((a, b) => a.sortOrder - b.sortOrder);
+    const idx = sameType.findIndex((b) => b.id === id);
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= sameType.length) return;
+
+    const reordered = [...sameType];
+    [reordered[idx], reordered[swapIdx]] = [reordered[swapIdx], reordered[idx]];
+    const sortOrderMap = new Map(reordered.map((b, i) => [b.id, i]));
+    const next = adminBanners.map((b) =>
+      sortOrderMap.has(b.id)
+        ? { ...b, sortOrder: sortOrderMap.get(b.id)!, updatedAt: new Date().toISOString() }
+        : b,
+    );
+    setAdminBanners(next);
+    persistBanners(next);
+  };
+
+  // Scheduling-aware selectors: banners that are enabled AND within their date window.
+  // Computed directly (no useMemo): the array is tiny, the context value is rebuilt
+  // on each render anyway, and direct computation keeps the React Compiler happy.
+  const activeAnnouncementBanners = adminBanners
+    .filter((b) => b.type === 'announcement' && isBannerActive(b))
+    .toSorted((a, b) => a.sortOrder - b.sortOrder);
+
+  const activeHeroBanner =
+    adminBanners
+      .filter((b) => b.type === 'hero' && isBannerActive(b))
+      .toSorted((a, b) => a.sortOrder - b.sortOrder)[0] ?? null;
+
+  const activePromoBanners = adminBanners
+    .filter((b) => b.type === 'promo' && isBannerActive(b))
+    .toSorted((a, b) => a.sortOrder - b.sortOrder);
 
   // Customer CRM Records
   const [adminCustomers, setAdminCustomers] = useState<CustomerRecord[]>(() => {
@@ -1644,6 +1784,7 @@ export const AppProvider: React.FC<{
     adminCoupons,
     adminCustomers,
     bannerAnnouncement,
+    adminBanners,
   });
   useEffect(() => {
     currentRestaurantStateRef.current = {
@@ -1656,6 +1797,7 @@ export const AppProvider: React.FC<{
       adminCoupons,
       adminCustomers,
       bannerAnnouncement,
+      adminBanners,
     };
   }, [
     restaurantProfile,
@@ -1667,6 +1809,7 @@ export const AppProvider: React.FC<{
     adminCoupons,
     adminCustomers,
     bannerAnnouncement,
+    adminBanners,
   ]);
 
   useEffect(() => {
@@ -1691,6 +1834,7 @@ export const AppProvider: React.FC<{
           coupons: (cloudData.coupons as Coupon[] | undefined) ?? localState.adminCoupons,
           customers: (cloudData.customers as CustomerRecord[] | undefined) ?? localState.adminCustomers,
           announcement: (cloudData.announcement as BannerAnnouncement | undefined) ?? localState.bannerAnnouncement,
+          banners: (cloudData.banners as BannerRecord[] | undefined) ?? localState.adminBanners,
         };
 
         skipFirebaseSyncRef.current = true;
@@ -1703,6 +1847,7 @@ export const AppProvider: React.FC<{
         if (publishedData.coupons) setAdminCoupons(publishedData.coupons);
         if (publishedData.customers) setAdminCustomers(publishedData.customers);
         if (publishedData.announcement) setBannerAnnouncement(publishedData.announcement);
+        if (publishedData.banners) setAdminBanners(publishedData.banners);
         firebaseReadyRef.current = true;
 
         void saveRestaurantCloudData(publishedData).catch((error: unknown) => {
@@ -1721,6 +1866,7 @@ export const AppProvider: React.FC<{
       if (cloudData.coupons) setAdminCoupons(cloudData.coupons as Coupon[]);
       if (cloudData.customers) setAdminCustomers(cloudData.customers as CustomerRecord[]);
       if (cloudData.announcement) setBannerAnnouncement(cloudData.announcement as BannerAnnouncement);
+      if (cloudData.banners) setAdminBanners(cloudData.banners as BannerRecord[]);
 
       firebaseReadyRef.current = true;
     }, (error) => {
@@ -1749,6 +1895,7 @@ export const AppProvider: React.FC<{
       coupons: adminCoupons,
       customers: adminCustomers,
       announcement: bannerAnnouncement,
+      banners: adminBanners,
     }).catch((error: unknown) => {
       console.warn('Firebase write failed; local data remains available.', error);
     });
@@ -1762,6 +1909,7 @@ export const AppProvider: React.FC<{
     adminCoupons,
     adminCustomers,
     bannerAnnouncement,
+    adminBanners,
   ]);
 
   // Live order status ticker
@@ -2045,6 +2193,15 @@ export const AppProvider: React.FC<{
         deleteAdminCategory,
         bannerAnnouncement,
         updateBannerAnnouncement,
+        adminBanners,
+        addAdminBanner,
+        updateAdminBanner,
+        deleteAdminBanner,
+        toggleAdminBanner,
+        moveAdminBanner,
+        activeAnnouncementBanners,
+        activeHeroBanner,
+        activePromoBanners,
         adminCustomers,
         addAdminCustomer,
         updateAdminCustomer,

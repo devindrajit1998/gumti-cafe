@@ -32,7 +32,7 @@ const navItems = [
   { href: '/admin/categories', label: 'Categories', icon: Layers },
   { href: '/admin/coupons', label: 'Coupons & Offers', icon: Tag },
   { href: '/admin/customers', label: 'Customer CRM', icon: Users },
-  { href: '/admin/announcements', label: 'Announcements', icon: Megaphone },
+  { href: '/admin/banners', label: 'Banner Manager', icon: Megaphone },
   { href: '/admin/qr-tables', label: 'Table QR Codes', icon: QrCode },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];

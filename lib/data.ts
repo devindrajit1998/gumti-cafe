@@ -1098,6 +1098,7 @@ export const DEFAULT_RESTAURANT_PROFILE: import('./types').RestaurantProfile = {
   openingHours: '8:00 AM - 11:00 PM (Mon - Sun)',
   isOpen: true,
   bannerImage: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1200&auto=format&fit=crop&q=80',
+  bannerImageMobile: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=700&auto=format&fit=crop&q=80',
   logoImage: '/logo-gumti.png',
   upiId: 'ghuticafe@upi',
   upiPayeeName: 'gumti cafe',
@@ -1206,6 +1207,85 @@ export const DEFAULT_ANNOUNCEMENT: import('./types').BannerAnnouncement = {
   linkText: 'Order Now',
   couponCode: 'ZAIKA20',
 };
+
+export const DEFAULT_BANNERS: import('./types').BannerRecord[] = [
+  {
+    id: 'default-announcement',
+    type: 'announcement',
+    enabled: true,
+    badge: 'FESTIVAL SPECIAL',
+    title: '🎉 Chef Special: Flat 20% OFF on all royal biryanis and tandoor grills! Use code ZAIKA20 on checkout.',
+    couponCode: 'ZAIKA20',
+    theme: 'orange',
+    sortOrder: 0,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'default-hero',
+    type: 'hero',
+    enabled: false,
+    badge: 'LIMITED TIME',
+    title: 'Royal Biryani Festival',
+    subtitle: 'Slow-cooked dum biryanis with saffron & royal spices — starting today!',
+    image: 'https://images.unsplash.com/photo-1631515243349-e0cb75fb8d3a?q=80&w=1200&auto=format&fit=crop',
+    ctaText: 'Order Biryani Now',
+    ctaLink: 'menu',
+    theme: 'orange',
+    sortOrder: 0,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'default-promo-1',
+    type: 'promo',
+    enabled: true,
+    badge: 'WEEKEND SPECIAL',
+    title: 'Momo Mania — Buy 2 Get 1',
+    subtitle: 'Steamed chicken & veg momos with fiery schezwan chutney.',
+    image: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?q=80&w=900&auto=format&fit=crop',
+    ctaText: 'Grab the Deal',
+    ctaLink: 'menu',
+    theme: 'rose',
+    sortOrder: 0,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'default-promo-2',
+    type: 'promo',
+    enabled: true,
+    badge: 'NEW LAUNCH',
+    title: 'Iced Shakes & Coolers',
+    subtitle: 'Beat the heat with thick Belgian chocolate & mango shakes.',
+    image: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?q=80&w=900&auto=format&fit=crop',
+    ctaText: 'Explore Drinks',
+    ctaLink: 'menu',
+    theme: 'violet',
+    sortOrder: 1,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  },
+];
+
+/**
+ * Migrates a legacy BannerAnnouncement into the new BannerRecord system.
+ * Returns an announcement-type BannerRecord seeded from the old data.
+ */
+export const migrateLegacyAnnouncement = (
+  legacy: import('./types').BannerAnnouncement,
+): import('./types').BannerRecord => ({
+  id: 'legacy-announcement',
+  type: 'announcement',
+  enabled: legacy.enabled,
+  badge: legacy.badge,
+  title: legacy.text,
+  couponCode: legacy.couponCode,
+  theme: 'orange',
+  sortOrder: 0,
+  createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z',
+});
 
 export const DEFAULT_TABLE_BOOKING_CONFIG: import('./types').TableBookingConfig = {
   enableBookings: true,
