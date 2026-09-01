@@ -223,7 +223,7 @@ export interface BannerAnnouncement {
   couponCode?: string;
 }
 
-export type BannerType = 'announcement' | 'hero' | 'promo';
+export type BannerType = 'announcement' | 'hero';
 
 export type BannerTheme = 'orange' | 'rose' | 'emerald' | 'violet' | 'zinc';
 

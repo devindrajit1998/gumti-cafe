@@ -98,6 +98,7 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = ({
                             sizes="(max-width: 768px) 100vw, 800px"
                             className="object-cover"
                             priority={idx === 0}
+                            unoptimized
                         />
                     ) : (
                         <div className={`absolute inset-0 bg-gradient-to-r ${THEME_GRADIENTS[banner.theme ?? 'orange']}`} />

@@ -114,9 +114,8 @@ export default function AdminSettingsPage() {
             <input value={form.address || ''} onChange={(e) => setForm({ ...form, address: e.target.value })} className={inputClass} />
           </div>
 
-          <div className="pt-4 border-t border-zinc-100 space-y-4">
-            <h3 className="text-xs font-black text-zinc-900 uppercase tracking-wider">Branding & Hero Banners</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="pt-4 border-t border-zinc-100">
+            <div className="max-w-xs">
               <ImageKitUploader
                 label="Restaurant Brand Logo"
                 currentImageUrl={form.logoImage || '/logo-gumti.png'}
@@ -124,26 +123,6 @@ export default function AdminSettingsPage() {
                   setForm((prev) => ({ ...prev, logoImage: url }));
                   updateRestaurantProfile({ logoImage: url });
                   showToast('Logo Updated! ✅', 'Brand logo updated live across the site.', 'success');
-                }}
-                folder="/gumti-cafe/branding"
-              />
-              <ImageKitUploader
-                label="Hero Banner (Desktop / Web)"
-                currentImageUrl={form.bannerImage || 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1200&auto=format&fit=crop&q=80'}
-                onUploadSuccess={(url) => {
-                  setForm((prev) => ({ ...prev, bannerImage: url }));
-                  updateRestaurantProfile({ bannerImage: url });
-                  showToast('Web Banner Updated! ✅', 'Desktop banner updated live on homepage.', 'success');
-                }}
-                folder="/gumti-cafe/branding"
-              />
-              <ImageKitUploader
-                label="Hero Banner (Mobile Version)"
-                currentImageUrl={form.bannerImageMobile || form.bannerImage || 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=700&auto=format&fit=crop&q=80'}
-                onUploadSuccess={(url) => {
-                  setForm((prev) => ({ ...prev, bannerImageMobile: url }));
-                  updateRestaurantProfile({ bannerImageMobile: url });
-                  showToast('Mobile Banner Updated! ✅', 'Mobile banner updated live on homepage.', 'success');
                 }}
                 folder="/gumti-cafe/branding"
               />

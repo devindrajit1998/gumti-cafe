@@ -29,11 +29,26 @@ export const Navbar: React.FC = () => {
     searchQuery,
     setSearchQuery,
     showToast,
+    activeAnnouncementBanners,
+    applyCoupon,
+    adminCoupons,
   } = useApp();
 
   const [isOrderModeOpen, setIsOrderModeOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [activeAnnouncementIdx, setActiveAnnouncementIdx] = useState(0);
   const orderModeRef = useRef<HTMLDivElement>(null);
+
+  // Rotate multiple active announcements every 4 seconds
+  useEffect(() => {
+    if (activeAnnouncementBanners.length <= 1) return;
+    const timer = setInterval(() => {
+      setActiveAnnouncementIdx((prev) => (prev + 1) % activeAnnouncementBanners.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [activeAnnouncementBanners.length]);
+
+  const currentAnnouncement = activeAnnouncementBanners[activeAnnouncementIdx] || activeAnnouncementBanners[0];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -89,25 +104,52 @@ export const Navbar: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-50 bg-[#FFFDF9]/95 backdrop-blur-md border-b border-[#E9C5A7] shadow-xs transition-all duration-300">
-      {/* 1. Thin Top Utility Banner */}
+      {/* 1. Thin Top Utility Banner / Dynamic Announcements */}
       <div className="bg-[#3D1020] text-[#F8D6B2] text-xs font-medium py-1.5 px-4 sm:px-6 lg:px-8 border-b border-[#6A2940]">
-        <div className="max-w-[1440px] mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <span className="bg-[#C64B3C] text-white px-2 py-0.5 rounded font-extrabold text-[10px] uppercase tracking-wider">
-              DIRECT CAFE
-            </span>
-            <span className="text-xs text-[#A6A095] hidden sm:inline">
-              Freshly made • direct WhatsApp ordering • 8:00 AM – 11:00 PM
-            </span>
-          </div>
+        <div className="max-w-[1440px] mx-auto flex items-center justify-between gap-3">
+          {currentAnnouncement ? (
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <span className="bg-[#C64B3C] text-white px-2 py-0.5 rounded font-extrabold text-[10px] uppercase tracking-wider shrink-0 animate-pulse">
+                {currentAnnouncement.badge || 'ANNOUNCEMENT'}
+              </span>
+              <span className="text-xs text-white font-medium truncate">
+                {currentAnnouncement.title}
+              </span>
+              {currentAnnouncement.couponCode && (
+                <button
+                  onClick={() => {
+                    const coupon = adminCoupons.find((c) => c.code === currentAnnouncement.couponCode);
+                    if (coupon) {
+                      applyCoupon(coupon);
+                      showToast(`Coupon ${currentAnnouncement.couponCode} Applied! 🎉`, undefined, 'success');
+                    } else {
+                      showToast(`Coupon: ${currentAnnouncement.couponCode}`, 'Use during checkout', 'info');
+                    }
+                  }}
+                  className="hidden sm:inline-flex items-center gap-1 bg-[#F8D6B2] hover:bg-white text-[#3D1020] px-2 py-0.5 rounded text-[10px] font-black tracking-wide transition-colors cursor-pointer shrink-0"
+                >
+                  Apply {currentAnnouncement.couponCode}
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="bg-[#C64B3C] text-white px-2 py-0.5 rounded font-extrabold text-[10px] uppercase tracking-wider shrink-0">
+                DIRECT CAFE
+              </span>
+              <span className="text-xs text-[#A6A095] hidden sm:inline truncate">
+                Freshly made • direct WhatsApp ordering • 8:00 AM – 11:00 PM
+              </span>
+            </div>
+          )}
 
-          <div className="flex items-center gap-5 text-xs">
+          <div className="flex items-center gap-4 sm:gap-5 text-xs shrink-0">
             <button
               onClick={handleDirectWhatsAppChat}
               className="flex items-center gap-1.5 text-[#D8D4CA] hover:text-white transition-colors cursor-pointer"
             >
               <MessageCircle className="w-3.5 h-3.5 text-[#22C55E]" />
-              <span>WhatsApp Help</span>
+              <span className="hidden sm:inline">WhatsApp Help</span>
             </button>
             <button
               onClick={handleShareMenu}

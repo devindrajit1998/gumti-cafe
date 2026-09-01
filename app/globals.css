@@ -49,6 +49,7 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding: 80px;
   -webkit-tap-highlight-color: transparent;
 }
 

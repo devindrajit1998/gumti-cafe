@@ -20,7 +20,7 @@ import {
   Tag,
   ArrowRight,
 } from 'lucide-react';
-import { MenuItem } from '@/lib/types';
+import { MenuItem, BannerRecord, isBannerActive } from '@/lib/types';
 import { generateWhatsAppUrl } from '@/lib/whatsapp';
 
 const CATEGORY_IMAGES: Record<string, string> = {
@@ -38,6 +38,13 @@ const CATEGORY_IMAGES: Record<string, string> = {
 };
 const CATEGORY_ICONS: Record<string, string> = { Coffee: '☕', Tea: '🍵', Burger: '🍔', Sandwich: '🥪', Pizzas: '🍕', Momo: '🥟', 'Noodles / Combos': '🍜', 'Small Bites': '🍢', 'Mutton Magic on Your Plate': '🍖', Soup: '🥣', 'Shake / Coolers': '🍹' };
 
+const HERO_THEME_GRADIENTS: Record<string, string> = {
+  orange: 'from-amber-600 via-orange-600 to-rose-600',
+  rose: 'from-rose-600 via-pink-700 to-purple-800',
+  emerald: 'from-emerald-600 via-teal-700 to-cyan-800',
+  violet: 'from-violet-600 via-purple-700 to-indigo-800',
+  zinc: 'from-zinc-800 via-neutral-800 to-zinc-900',
+};
 
 export const HomeView: React.FC = () => {
   const {
@@ -67,6 +74,7 @@ export const HomeView: React.FC = () => {
     setSearchQuery,
     setCustomizingItem,
     showToast,
+    adminBanners,
   } = useApp();
 
   const [dietFilter, setDietFilter] = useState<'all' | 'veg' | 'non-veg' | 'spicy' | 'rating'>('all');
@@ -104,8 +112,35 @@ export const HomeView: React.FC = () => {
     setCollapsedCategories({});
   };
 
-  // Data-driven hero slides: real brand info + actual menu categories (never advertises dishes that don't exist)
+  // Dynamic Hero Slides: Shows STRICTLY what is configured in Admin Hero Slider.
+  // If no admin banners are active, it falls back to the default brand info slide.
   const heroSlides = useMemo(() => {
+    const activeHeroSlides = adminBanners
+      .filter((b) => b.type === 'hero' && isBannerActive(b))
+      .toSorted((a, b) => a.sortOrder - b.sortOrder)
+      .map((b) => ({
+        id: `banner-${b.id}`,
+        tag: b.badge ? `✨ ${b.badge.toUpperCase()}` : '⚡ FEATURED',
+        cuisineTag: 'Chef Highlight',
+        title: b.title,
+        subtitle: b.subtitle || restaurantProfile.name,
+        description: b.subtitle || `Special promotion at ${restaurantProfile.name}. Direct WhatsApp ordering available.`,
+        image: b.image || restaurantProfile.bannerImage || 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1200&auto=format&fit=crop&q=80',
+        imageMobile: b.image || restaurantProfile.bannerImageMobile || 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=700&auto=format&fit=crop&q=80',
+        rating: '4.8',
+        prepTime: restaurantProfile.estimatedDeliveryTime,
+        cost: b.couponCode ? `Code: ${b.couponCode}` : 'Fresh daily',
+        ctaText: b.ctaText,
+        ctaLink: b.ctaLink,
+        theme: b.theme,
+      }));
+
+    // If admin has configured hero slider banners, show ONLY those!
+    if (activeHeroSlides.length > 0) {
+      return activeHeroSlides;
+    }
+
+    // Default fallback slide when no admin hero banners are active
     const avgRating = restaurantMenu.length
       ? (restaurantMenu.reduce((sum, i) => sum + (i.rating || 0), 0) / restaurantMenu.length).toFixed(1)
       : '4.7';
@@ -114,43 +149,25 @@ export const HomeView: React.FC = () => {
       : 150;
     const costForTwo = `₹${Math.max(200, Math.round((avgPrice * 2) / 10) * 10)} for two`;
 
-    const brandSlide = {
-      id: 'brand',
-      tag: `★★★★★ ${avgRating} · ${restaurantMenu.length || '50'}+ ITEMS`,
-      cuisineTag: 'Coffee, chai & comfort food',
-      title: restaurantProfile.name,
-      subtitle: restaurantProfile.tagline || 'Good food. Good adda.',
-      description: `Fresh coffee, chai, momos, burgers and more — ordered direct via WhatsApp in ${restaurantProfile.estimatedDeliveryTime}.`,
-      image: restaurantProfile.bannerImage || 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1200&auto=format&fit=crop&q=80',
-      imageMobile: restaurantProfile.bannerImageMobile || restaurantProfile.bannerImage || 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=700&auto=format&fit=crop&q=80',
-      rating: avgRating,
-      prepTime: restaurantProfile.estimatedDeliveryTime,
-      cost: costForTwo,
-    };
-
-    const categorySlides = Object.keys(CATEGORY_IMAGES)
-      .map((category) => {
-        const items = restaurantMenu.filter((i) => i.category === category && i.isAvailable);
-        if (items.length === 0) return null;
-        const star = items.find((i) => i.isBestseller) || items[0];
-        return {
-          id: `cat-${category}`,
-          tag: `${CATEGORY_ICONS[category] || '🍽️'} ${category.toUpperCase()}`,
-          cuisineTag: `${items.length} items on the menu`,
-          title: star.name,
-          subtitle: category,
-          description: star.description,
-          image: CATEGORY_IMAGES[category],
-          rating: String(star.rating || 4.7),
-          prepTime: star.preparationTime || '15-25 mins',
-          cost: `from ₹${Math.min(...items.map((i) => i.price))}`,
-        };
-      })
-      .filter((s): s is NonNullable<typeof s> => s !== null)
-      .slice(0, 3);
-
-    return [brandSlide, ...categorySlides];
-  }, [restaurantMenu, restaurantProfile]);
+    return [
+      {
+        id: 'brand-default',
+        tag: `★★★★★ ${avgRating} · ${restaurantMenu.length || '50'}+ ITEMS`,
+        cuisineTag: 'Coffee, chai & comfort food',
+        title: restaurantProfile.name,
+        subtitle: restaurantProfile.tagline || 'Good food. Good adda.',
+        description: `Fresh coffee, chai, momos, burgers and more — ordered direct via WhatsApp in ${restaurantProfile.estimatedDeliveryTime}.`,
+        image: restaurantProfile.bannerImage || 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1200&auto=format&fit=crop&q=80',
+        imageMobile: restaurantProfile.bannerImageMobile || restaurantProfile.bannerImage || 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=700&auto=format&fit=crop&q=80',
+        rating: avgRating,
+        prepTime: restaurantProfile.estimatedDeliveryTime,
+        cost: costForTwo,
+        ctaText: undefined,
+        ctaLink: undefined,
+        theme: undefined,
+      },
+    ];
+  }, [adminBanners, restaurantMenu, restaurantProfile]);
 
   const scrollCategories = (direction: 'left' | 'right') => {
     if (categorySliderRef.current) {
@@ -264,7 +281,7 @@ export const HomeView: React.FC = () => {
   return (
     <div className="space-y-6 pb-0 w-full">
 
-      {/* 1. CINEMATIC RESTAURANT HERO SLIDER */}
+      {/* 1. CINEMATIC UNIFIED DYNAMIC HERO SLIDER */}
       <section className="relative rounded-3xl overflow-hidden bg-[#1E1B18] text-white border border-[#3A3530] shadow-xl group min-h-[280px] sm:min-h-[340px] md:min-h-[380px] flex flex-col justify-between">
         {/* Background Slide Imagery with Lighter Vibrant Overlay */}
         <div className="absolute inset-0 z-0">
@@ -325,54 +342,75 @@ export const HomeView: React.FC = () => {
             </p>
           </div>
 
-          {/* Bottom Row: Info Pills + Slide Indicator Dots */}
+          {/* Bottom Row: Info Pills + CTA / Slide Indicator Dots */}
           <div className="flex items-center justify-between gap-2 pt-2.5 sm:pt-3 border-t border-white/15 shrink-0">
-            {/* Info Pills */}
+            {/* Info Pills or Direct CTA */}
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-white font-medium">
-              <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg border border-white/10">
-                <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#FBBF24] fill-[#FBBF24]" />
-                <span className="font-bold text-white">{slide.rating}</span>
-              </div>
-              <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg border border-white/10">
-                <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#F8D6B2]" />
-                <span className="font-bold text-white">{slide.prepTime}</span>
-              </div>
-              <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg border border-white/10">
-                <span className="font-bold text-white">{slide.cost}</span>
-              </div>
+              {'ctaText' in slide && slide.ctaText && 'ctaLink' in slide && slide.ctaLink ? (
+                <button
+                  onClick={() => {
+                    const link = slide.ctaLink as string;
+                    if (link.startsWith('http')) {
+                      window.open(link, '_blank', 'noopener,noreferrer');
+                    } else {
+                      navigateTo(link as Parameters<typeof navigateTo>[0]);
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 bg-[#7C203A] hover:bg-[#5D162C] text-white font-black text-xs rounded-xl shadow-md transition-all cursor-pointer active:scale-95 border border-white/20"
+                >
+                  <span>{slide.ctaText}</span>
+                  <ArrowRight className="w-3 h-3" />
+                </button>
+              ) : (
+                <>
+                  <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg border border-white/10">
+                    <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#FBBF24] fill-[#FBBF24]" />
+                    <span className="font-bold text-white">{slide.rating}</span>
+                  </div>
+                  <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg border border-white/10">
+                    <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#F8D6B2]" />
+                    <span className="font-bold text-white">{slide.prepTime}</span>
+                  </div>
+                  <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg border border-white/10">
+                    <span className="font-bold text-white">{slide.cost}</span>
+                  </div>
+                </>
+              )}
             </div>
 
-            {/* Slider Navigation Controls (Dots & Arrows) */}
-            <div className="flex items-center gap-1.5 shrink-0">
-              <button
-                onClick={() => setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length)}
-                className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-black/40 hover:bg-black/70 border border-white/20 flex items-center justify-center text-white transition-all cursor-pointer"
-                title="Previous Slide"
-              >
-                <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" />
-              </button>
+            {/* Slider Navigation Controls (Dots & Arrows) - only when multiple slides exist */}
+            {heroSlides.length > 1 && (
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={() => setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length)}
+                  className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-black/40 hover:bg-black/70 border border-white/20 flex items-center justify-center text-white transition-all cursor-pointer"
+                  title="Previous Slide"
+                >
+                  <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" />
+                </button>
 
-              <div className="flex items-center gap-1 bg-black/30 backdrop-blur-sm px-2 py-1 rounded-full border border-white/10">
-                {heroSlides.map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setCurrentSlide(idx)}
-                    className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                      currentSlide === idx ? 'w-4 sm:w-5 bg-[#F8D6B2]' : 'w-1.5 bg-white/40 hover:bg-white/70'
-                    }`}
-                    title={`Slide ${idx + 1}`}
-                  />
-                ))}
+                <div className="flex items-center gap-1 bg-black/30 backdrop-blur-sm px-2 py-1 rounded-full border border-white/10">
+                  {heroSlides.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentSlide(idx)}
+                      className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                        currentSlide === idx ? 'w-4 sm:w-5 bg-[#F8D6B2]' : 'w-1.5 bg-white/40 hover:bg-white/70'
+                      }`}
+                      title={`Slide ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => setCurrentSlide((prev) => (prev + 1) % heroSlides.length)}
+                  className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-black/40 hover:bg-black/70 border border-white/20 flex items-center justify-center text-white transition-all cursor-pointer"
+                  title="Next Slide"
+                >
+                  <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
+                </button>
               </div>
-
-              <button
-                onClick={() => setCurrentSlide((prev) => (prev + 1) % heroSlides.length)}
-                className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-black/40 hover:bg-black/70 border border-white/20 flex items-center justify-center text-white transition-all cursor-pointer"
-                title="Next Slide"
-              >
-                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
-              </button>
-            </div>
+            )}
           </div>
         </div>
       </section>

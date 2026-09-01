@@ -24,20 +24,15 @@ import type { BannerRecord, BannerType, BannerTheme } from '@/lib/types';
 import { isBannerActive } from '@/lib/types';
 
 const BANNER_TYPE_META: Record<BannerType, { label: string; icon: typeof Megaphone; desc: string }> = {
+    hero: {
+        label: 'Hero Slider',
+        icon: Sparkles,
+        desc: 'Featured promotional slides shown in the main Hero Slider on your homepage with image, badges, and CTA buttons.',
+    },
     announcement: {
         label: 'Announcements',
         icon: Megaphone,
-        desc: 'Scrolling text strips at the top of your storefront with optional coupon apply buttons.',
-    },
-    hero: {
-        label: 'Hero Banner',
-        icon: Sparkles,
-        desc: 'Large featured banner replacing the homepage hero section. Only the first active hero banner is shown.',
-    },
-    promo: {
-        label: 'Promo Carousel',
-        icon: ImageIcon,
-        desc: 'Image slides in the homepage promo carousel with autoplay, swipe, and CTA buttons.',
+        desc: 'Top notification and coupon marquee strip displayed above the navigation bar.',
     },
 };
 
@@ -115,10 +110,10 @@ export default function AdminBannersPage() {
         showToast,
     } = useApp();
 
-    const [activeTab, setActiveTab] = useState<BannerType>('announcement');
+    const [activeTab, setActiveTab] = useState<BannerType>('hero');
     const [editingId, setEditingId] = useState<string | null>(null);
     const [showForm, setShowForm] = useState(false);
-    const [form, setForm] = useState<BannerFormData>(emptyForm('announcement'));
+    const [form, setForm] = useState<BannerFormData>(emptyForm('hero'));
 
     const bannersOfType = useMemo(
         () =>
@@ -198,7 +193,7 @@ export default function AdminBannersPage() {
                 <div>
                     <h1 className="text-2xl font-black text-zinc-900">Banner Management</h1>
                     <p className="text-sm text-zinc-500 mt-1">
-                        Create and schedule announcement strips, hero banners, and promo carousel slides for your storefront.
+                        Manage your homepage Hero Slider banners and top announcement notifications.
                     </p>
                 </div>
                 <button
@@ -383,7 +378,7 @@ export default function AdminBannersPage() {
                             {/* Banner type */}
                             <div>
                                 <label className="text-xs font-bold text-zinc-700 block mb-1.5">Banner Type</label>
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="grid grid-cols-2 gap-2">
                                     {(Object.keys(BANNER_TYPE_META) as BannerType[]).map((type) => (
                                         <button
                                             key={type}
@@ -479,29 +474,7 @@ export default function AdminBannersPage() {
                                 </div>
                             )}
 
-                            {/* Theme (announcement & promo fallback) */}
-                            <div>
-                                <label className="text-xs font-bold text-zinc-700 block mb-1.5">Color Theme</label>
-                                <div className="flex gap-2 flex-wrap">
-                                    {THEME_OPTIONS.map((theme) => (
-                                        <button
-                                            key={theme.value}
-                                            type="button"
-                                            onClick={() => setField('theme', theme.value)}
-                                            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold border transition-all ${form.theme === theme.value
-                                                ? 'border-orange-500 bg-orange-50 text-orange-700'
-                                                : 'border-zinc-200 text-zinc-600 hover:border-zinc-300'
-                                                }`}
-                                        >
-                                            <span className={`w-4 h-4 rounded-full ${theme.swatch}`} />
-                                            {theme.label}
-                                        </button>
-                                    ))}
-                                </div>
-                                <p className="text-[11px] text-zinc-400 mt-1">
-                                    Used for announcement strips and as fallback when no image is set.
-                                </p>
-                            </div>
+
 
                             {/* CTA */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -600,7 +573,14 @@ export default function AdminBannersPage() {
                                 ) : (
                                     <div className={`relative h-36 rounded-2xl overflow-hidden ${form.enabled ? '' : 'opacity-50 grayscale'}`}>
                                         {form.image ? (
-                                            <Image src={form.image} alt="Banner preview" fill sizes="600px" className="object-cover" />
+                                            <Image
+                                                src={form.image}
+                                                alt="Banner preview"
+                                                fill
+                                                sizes="600px"
+                                                className="object-cover"
+                                                unoptimized
+                                            />
                                         ) : (
                                             <div className="absolute inset-0 bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600" />
                                         )}

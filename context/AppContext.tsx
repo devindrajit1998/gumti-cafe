@@ -174,8 +174,9 @@ interface AppContextType {
   toggleAdminBanner: (id: string) => void;
   moveAdminBanner: (id: string, direction: 'up' | 'down') => void;
   activeAnnouncementBanners: BannerRecord[];
+  activeHeroBanners: BannerRecord[];
   activeHeroBanner: BannerRecord | null;
-  activePromoBanners: BannerRecord[];
+  activePromoBanners?: BannerRecord[];
   adminCustomers: CustomerRecord[];
   addAdminCustomer: (customer: CustomerRecord) => void;
   updateAdminCustomer: (id: string, updated: Partial<CustomerRecord>) => void;
@@ -1338,14 +1339,12 @@ export const AppProvider: React.FC<{
     .filter((b) => b.type === 'announcement' && isBannerActive(b))
     .toSorted((a, b) => a.sortOrder - b.sortOrder);
 
-  const activeHeroBanner =
-    adminBanners
-      .filter((b) => b.type === 'hero' && isBannerActive(b))
-      .toSorted((a, b) => a.sortOrder - b.sortOrder)[0] ?? null;
-
-  const activePromoBanners = adminBanners
-    .filter((b) => b.type === 'promo' && isBannerActive(b))
+  const activeHeroBanners = adminBanners
+    .filter((b) => b.type === 'hero' && isBannerActive(b))
     .toSorted((a, b) => a.sortOrder - b.sortOrder);
+
+  const activeHeroBanner = activeHeroBanners[0] ?? null;
+  const activePromoBanners = activeHeroBanners;
 
   // Customer CRM Records
   const [adminCustomers, setAdminCustomers] = useState<CustomerRecord[]>(() => {
@@ -2200,6 +2199,7 @@ export const AppProvider: React.FC<{
         toggleAdminBanner,
         moveAdminBanner,
         activeAnnouncementBanners,
+        activeHeroBanners,
         activeHeroBanner,
         activePromoBanners,
         adminCustomers,
