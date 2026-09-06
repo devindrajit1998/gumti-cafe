@@ -176,7 +176,7 @@ interface AppContextType {
   activeAnnouncementBanners: BannerRecord[];
   activeHeroBanners: BannerRecord[];
   activeHeroBanner: BannerRecord | null;
-  activePromoBanners?: BannerRecord[];
+  activePromoBanners: BannerRecord[];
   adminCustomers: CustomerRecord[];
   addAdminCustomer: (customer: CustomerRecord) => void;
   updateAdminCustomer: (id: string, updated: Partial<CustomerRecord>) => void;

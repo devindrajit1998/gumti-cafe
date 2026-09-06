@@ -63,13 +63,13 @@ export const PromoBanners: React.FC = () => {
   return (
     <section className="mb-10 space-y-5">
       {/* Announcement marquee banners from the Banner Management System */}
-      {activeAnnouncementBanners.map((banner) => (
+      {activeAnnouncementBanners?.map((banner) => (
         <AnnouncementStrip key={banner.id} banner={banner} />
       ))}
 
       {/* Promo image carousel from the Banner Management System */}
-      {activePromoBanners.length > 0 && (
-        <BannerCarousel banners={activePromoBanners} heightClass="h-44 sm:h-56" interval={5000} />
+      {Boolean(activePromoBanners && activePromoBanners.length > 0) && (
+        <BannerCarousel banners={activePromoBanners!} heightClass="h-44 sm:h-56" interval={5000} />
       )}
 
       <div className="flex items-center justify-between">
