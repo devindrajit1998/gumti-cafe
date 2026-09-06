@@ -22,7 +22,10 @@ import {
   Menu,
   X,
   Circle,
+  LogOut,
+  ShieldCheck,
 } from 'lucide-react';
+import { useAdminAuth } from '@/components/admin/AdminAuthGuard';
 
 const navItems = [
   { href: '/admin/overview', label: 'Dashboard', icon: LayoutDashboard },
@@ -51,7 +54,10 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
   updateRestaurantProfile,
   activeOrdersCount,
   onNavigate,
-}) => (
+}) => {
+  const { adminUser, logout } = useAdminAuth();
+
+  return (
   <div className="flex flex-col h-full">
     {/* Brand Image Logo */}
     <div className="px-5 py-6 border-b border-white/10 flex items-center justify-between">
@@ -118,22 +124,50 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
     </nav>
 
     {/* Footer */}
-    <div className="px-4 py-4 border-t border-white/10">
+    <div className="px-3.5 py-3 border-t border-white/10 space-y-2">
+      {/* Admin Session Badge & Logout */}
+      <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="relative w-8 h-8 rounded-lg bg-[#7C203A] border border-[#F8D6B2]/20 flex items-center justify-center text-[#F8D6B2] shrink-0 shadow-xs">
+            <ShieldCheck className="w-4 h-4 text-[#F8D6B2]" />
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full ring-2 ring-[#3D1020]" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-white truncate leading-tight capitalize">
+              {adminUser?.username || 'Admin'}
+            </p>
+            <p className="text-[10px] text-emerald-400 font-semibold leading-tight">Active Session</p>
+          </div>
+        </div>
+        <button
+          onClick={() => {
+            if (window.confirm('Are you sure you want to sign out of the Admin Portal?')) {
+              void logout();
+            }
+          }}
+          title="Sign out of admin session"
+          className="p-1.5 rounded-lg text-white/50 hover:text-rose-300 hover:bg-rose-500/15 active:scale-95 transition-all cursor-pointer"
+        >
+          <LogOut className="w-4 h-4" />
+        </button>
+      </div>
+
       <a
         href="/"
         target="_blank"
         rel="noreferrer"
-        className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-white/40 hover:text-white/80 hover:bg-white/5 text-sm font-semibold transition-all"
+        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-white/40 hover:text-white/80 hover:bg-white/5 text-xs font-semibold transition-all"
       >
-        <ExternalLink className="w-4 h-4 shrink-0" />
+        <ExternalLink className="w-3.5 h-3.5 shrink-0" />
         <span>View Storefront</span>
       </a>
-      <p className="text-center text-white/20 text-[10px] mt-3 font-medium">
+      <p className="text-center text-white/20 text-[10px] font-medium">
         {restaurantProfile.locality}, {restaurantProfile.city}
       </p>
     </div>
   </div>
-);
+  );
+};
 
 export const AdminSidebar: React.FC = () => {
   const pathname = usePathname();

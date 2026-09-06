@@ -158,8 +158,22 @@ export const Footer: React.FC = () => {
           </div>
         </div>
 
-        <div className="border-t border-[#6A2940] pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#F8D6B2]/70">
+        <div className="border-t border-[#6A2940] pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-[#F8D6B2]/70">
           <p>© {new Date().getFullYear()} {restaurantProfile.name}. All rights reserved.</p>
+          
+          <p className="flex items-center gap-1.5 text-xs text-[#F8D6B2]/80 font-medium">
+            <span>Developed by</span>
+            <a
+              href="https://indrajit-mern.vercel.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-white hover:text-[#F8D6B2] underline underline-offset-4 decoration-[#E9B88F]/50 hover:decoration-[#F8D6B2] transition-all inline-flex items-center gap-0.5"
+            >
+              <span>Indrajit</span>
+              <span className="text-[10px] opacity-75">↗</span>
+            </a>
+          </p>
+
           <div className="flex items-center gap-4 text-xs">
             <button
               onClick={() => navigateTo('privacy')}
