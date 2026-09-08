@@ -56,6 +56,7 @@ import {
 } from '@/lib/types';
 import { VegBadge } from '@/components/ui/VegBadge';
 import Image from 'next/image';
+import { ImageKitUploader } from '@/components/admin/ImageKitUploader';
 
 const IMAGE_PRESETS = [
   { label: 'Royal Biryani', url: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=800&auto=format&fit=crop&q=80' },
@@ -1097,13 +1098,7 @@ export const AdminMenuView: React.FC = () => {
                   onClick={() => setSelectedMenuIds(filteredMenuItems.length === selectedMenuIds.length ? [] : filteredMenuItems.map((item) => item.id))}
                   className="px-3 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-xl text-xs font-bold"
                 >{selectedMenuIds.length === filteredMenuItems.length ? 'Clear Selection' : 'Select Visible'}</button>
-                <button
-                  onClick={resetMenuToDefault}
-                  className="px-3 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Reset Defaults</span>
-                </button>
+
 
                 <button
                   onClick={handleOpenAddDish}
@@ -2076,13 +2071,20 @@ export const AdminMenuView: React.FC = () => {
                 />
               </div>
 
-              {/* Photo Picker with Presets */}
-              <div>
-                <label className="text-xs font-bold text-zinc-700 block mb-1">Image URL</label>
+              {/* Photo Picker with ImageKit Cloud and Presets */}
+              <div className="space-y-2">
+                <ImageKitUploader
+                  label="Dish Image (ImageKit Cloud)"
+                  currentImageUrl={dishImage}
+                  onUploadSuccess={(url) => setDishImage(url)}
+                  folder="/gumti-cafe/menu"
+                />
+
                 <input
                   type="text"
                   value={dishImage}
                   onChange={(e) => setDishImage(e.target.value)}
+                  placeholder="Or paste custom image URL..."
                   className="w-full text-xs font-semibold px-3 py-2 rounded-xl border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-orange-500 mb-2"
                 />
 

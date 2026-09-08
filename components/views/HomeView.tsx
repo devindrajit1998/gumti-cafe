@@ -49,6 +49,7 @@ const HERO_THEME_GRADIENTS: Record<string, string> = {
 export const HomeView: React.FC = () => {
   const {
     restaurantProfile,
+    isLoadingMenu,
     restaurantMenu,
     orderType,
     setOrderType,
@@ -773,8 +774,35 @@ export const HomeView: React.FC = () => {
 
         {/* LEFT COLUMN (70% — 8 cols): Compact Modern 2-Column Food Grid */}
         <div className="lg:col-span-8 space-y-4">
-          {groupedSections.map((sec) => {
-            const isCollapsed = !!collapsedCategories[sec.category];
+          {isLoadingMenu ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-[#FFFDF9] rounded-3xl p-4 sm:p-6 border border-[#E9C5A7] shadow-xs space-y-4 animate-pulse">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#E9C5A7]/40 shrink-0"></div>
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-[#E9C5A7]/40 rounded w-1/3"></div>
+                      <div className="h-3 bg-[#E9C5A7]/30 rounded w-1/4"></div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                    {[1, 2].map((j) => (
+                      <div key={j} className="p-3.5 rounded-2xl bg-[#FFF4E8]/60 border border-[#E9C5A7]/40 flex gap-3">
+                        <div className="flex-1 space-y-2 py-1">
+                          <div className="h-3 bg-[#E9C5A7]/40 rounded w-3/4"></div>
+                          <div className="h-3 bg-[#E9C5A7]/30 rounded w-1/2"></div>
+                          <div className="h-3 bg-[#E9C5A7]/30 rounded w-full mt-2"></div>
+                        </div>
+                        <div className="w-20 h-20 shrink-0 bg-[#E9C5A7]/40 rounded-xl"></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            groupedSections.map((sec) => {
+              const isCollapsed = !!collapsedCategories[sec.category];
 
             return (
               <div
@@ -938,7 +966,8 @@ export const HomeView: React.FC = () => {
                 )}
               </div>
             );
-          })}
+          })
+          )}
         </div>
 
         {/* RIGHT COLUMN (30% — 4 cols): Sticky Commerce Cart Panel */}

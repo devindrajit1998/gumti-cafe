@@ -128,6 +128,14 @@ export const StorefrontShell: React.FC<StorefrontShellProps> = ({
   initialView = 'home',
   initialCategory = null,
 }) => {
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
   return (
     <AppProvider initialView={initialView} initialCategory={initialCategory}>
       <StorefrontContent />

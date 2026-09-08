@@ -42,10 +42,34 @@ export interface RestaurantCloudData {
     updatedAt?: string;
 }
 
+export const sanitizeForFirestore = (obj: any): any => {
+    if (obj === undefined) return null;
+    if (obj === null) return null;
+    if (Array.isArray(obj)) {
+        return obj
+            .filter((item) => item !== undefined)
+            .map((item) => sanitizeForFirestore(item));
+    }
+    if (typeof obj === 'object' && !(obj instanceof Date)) {
+        const cleaned: Record<string, any> = {};
+        for (const [key, value] of Object.entries(obj)) {
+            if (value !== undefined) {
+                cleaned[key] = sanitizeForFirestore(value);
+            }
+        }
+        return cleaned;
+    }
+    return obj;
+};
+
 const restaurantDocument = doc(firestore, 'restaurants', 'ghuti-cafe');
 
 export const saveRestaurantCloudData = async (data: RestaurantCloudData) => {
-    await setDoc(restaurantDocument, { ...data, updatedAt: new Date().toISOString() }, { merge: true });
+    const sanitized = sanitizeForFirestore({
+        ...data,
+        updatedAt: new Date().toISOString(),
+    });
+    await setDoc(restaurantDocument, sanitized, { merge: true });
 };
 
 export const subscribeToRestaurantCloudData = (

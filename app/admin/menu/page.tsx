@@ -325,7 +325,7 @@ export default function AdminMenuPage() {
                 <ImageKitUploader
                   label=""
                   currentImageUrl={form.image}
-                  onUploadSuccess={(url) => setForm({ ...form, image: url })}
+                  onUploadSuccess={(url) => setForm((prev) => ({ ...prev, image: url }))}
                   folder="/gumti-cafe/menu"
                 />
                 <div className="flex flex-wrap gap-1.5 mt-2">

@@ -45,7 +45,7 @@ import { formatOrderForWhatsApp, generateWhatsAppUrl, DEFAULT_ADMIN_WHATSAPP } f
 let dishCounter = 100;
 function generateDishId(): string {
   dishCounter += 1;
-  return `dish-${dishCounter}`;
+  return `ghuti-dish-${Date.now()}-${dishCounter}-${Math.random().toString(36).slice(2, 6)}`;
 }
 
 let groupOrderCounter = 1000;
@@ -88,6 +88,7 @@ interface AppContextType {
   // Restaurant Profile & Menu (Owner Managed)
   restaurantProfile: RestaurantProfile;
   updateRestaurantProfile: (updated: Partial<RestaurantProfile>) => void;
+  isLoadingMenu: boolean;
   restaurantMenu: MenuItem[];
   addMenuItem: (item: Omit<MenuItem, 'id' | 'restaurantId' | 'rating' | 'ratingCount'>) => void;
   updateMenuItem: (id: string, updated: Partial<MenuItem>) => void;
@@ -505,6 +506,7 @@ export const AppProvider: React.FC<{
     }, 3500);
   }, []);
 
+  const [isLoadingMenu, setIsLoadingMenu] = useState(true);
   const [activeView, setActiveView] = useState<ActiveView>(initialView);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(initialCategory);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -538,8 +540,7 @@ export const AppProvider: React.FC<{
         const saved = localStorage.getItem('gumti_cafe_menu');
         if (saved) {
           const parsed = JSON.parse(saved) as MenuItem[];
-          const isGhutiCatalog = Array.isArray(parsed) && parsed.some((item) => item.id.startsWith('ghuti-'));
-          if (isGhutiCatalog) return parsed;
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
         }
       } catch { }
     }
@@ -1813,51 +1814,18 @@ export const AppProvider: React.FC<{
 
   useEffect(() => {
     const unsubscribe = subscribeToRestaurantCloudData((cloudData) => {
-      const localState = currentRestaurantStateRef.current;
-      const hasCloudData = Object.keys(cloudData).some((key) => key !== 'updatedAt');
-      const cloudMenuVersion = cloudData.menuVersion ?? 0;
-      const shouldPublishApprovedMenu = !hasCloudData || cloudMenuVersion < GHUTI_CAFE_MENU_VERSION;
-      const publishedMenu = shouldPublishApprovedMenu
-        ? GHUTI_CAFE_MENU
-        : (cloudData.menu as MenuItem[] | undefined);
-
-      if (shouldPublishApprovedMenu) {
-        const publishedData = {
-          profile: (cloudData.profile as RestaurantProfile | undefined) ?? localState.restaurantProfile,
-          menu: publishedMenu ?? localState.restaurantMenu,
-          menuVersion: GHUTI_CAFE_MENU_VERSION,
-          orders: (cloudData.orders as Order[] | undefined) ?? localState.pastOrders,
-          bookings: (cloudData.bookings as TableBooking[] | undefined) ?? localState.tableBookings,
-          bookingConfig: (cloudData.bookingConfig as TableBookingConfig | undefined) ?? localState.tableBookingConfig,
-          categories: (cloudData.categories as string[] | undefined) ?? localState.adminCategories,
-          coupons: (cloudData.coupons as Coupon[] | undefined) ?? localState.adminCoupons,
-          customers: (cloudData.customers as CustomerRecord[] | undefined) ?? localState.adminCustomers,
-          announcement: (cloudData.announcement as BannerAnnouncement | undefined) ?? localState.bannerAnnouncement,
-          banners: (cloudData.banners as BannerRecord[] | undefined) ?? localState.adminBanners,
-        };
-
-        skipFirebaseSyncRef.current = true;
-        setRestaurantProfile(publishedData.profile);
-        setRestaurantMenu(publishedData.menu);
-        if (publishedData.orders) setPastOrders(publishedData.orders);
-        if (publishedData.bookings) setTableBookings(publishedData.bookings);
-        if (publishedData.bookingConfig) setTableBookingConfig(publishedData.bookingConfig);
-        if (publishedData.categories) setAdminCategories(publishedData.categories);
-        if (publishedData.coupons) setAdminCoupons(publishedData.coupons);
-        if (publishedData.customers) setAdminCustomers(publishedData.customers);
-        if (publishedData.announcement) setBannerAnnouncement(publishedData.announcement);
-        if (publishedData.banners) setAdminBanners(publishedData.banners);
-        firebaseReadyRef.current = true;
-
-        void saveRestaurantCloudData(publishedData).catch((error: unknown) => {
-          console.warn('Firebase catalog publish failed; local data remains available.', error);
-        });
-        return;
-      }
-
       skipFirebaseSyncRef.current = true;
-      if (cloudData.profile) setRestaurantProfile(cloudData.profile as RestaurantProfile);
-      if (cloudData.menu) setRestaurantMenu(cloudData.menu as MenuItem[]);
+      
+      if (cloudData.profile) {
+        setRestaurantProfile(cloudData.profile as RestaurantProfile);
+        try { localStorage.setItem('gumti_cafe_profile', JSON.stringify(cloudData.profile)); } catch { }
+      }
+      
+      // Fully dynamic menu: whatever is in Firebase is the single source of truth.
+      const menuData = Array.isArray(cloudData.menu) ? cloudData.menu : [];
+      setRestaurantMenu(menuData as MenuItem[]);
+      try { localStorage.setItem('gumti_cafe_menu', JSON.stringify(menuData)); } catch { }
+      
       if (cloudData.orders) setPastOrders(cloudData.orders as Order[]);
       if (cloudData.bookings) setTableBookings(cloudData.bookings as TableBooking[]);
       if (cloudData.bookingConfig) setTableBookingConfig(cloudData.bookingConfig as TableBookingConfig);
@@ -1868,9 +1836,11 @@ export const AppProvider: React.FC<{
       if (cloudData.banners) setAdminBanners(cloudData.banners as BannerRecord[]);
 
       firebaseReadyRef.current = true;
+      setIsLoadingMenu(false);
     }, (error) => {
       console.warn('Firebase sync unavailable; continuing with local data.', error.message);
       firebaseReadyRef.current = true;
+      setIsLoadingMenu(false);
     });
 
     return unsubscribe;
@@ -2136,6 +2106,7 @@ export const AppProvider: React.FC<{
         clearRecentSearches,
         restaurantProfile,
         updateRestaurantProfile,
+        isLoadingMenu,
         restaurantMenu,
         addMenuItem,
         updateMenuItem,
