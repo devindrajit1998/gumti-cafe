@@ -720,7 +720,26 @@ export const AppProvider: React.FC<{
   };
 
   // Cart State
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('zaika_cart');
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return [];
+  });
+
+  // Sync cart to local storage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('zaika_cart', JSON.stringify(cart));
+      } catch (e) {
+        console.error('Failed to save cart:', e);
+      }
+    }
+  }, [cart]);
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [deliveryTip, setDeliveryTip] = useState<number>(20);
   const [deliveryInstructions, setDeliveryInstructions] = useState<string[]>(['Avoid calling unless needed']);

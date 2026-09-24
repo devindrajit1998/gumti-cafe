@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import { formatOrderForWhatsApp } from '@/lib/whatsapp';
 import confetti from 'canvas-confetti';
@@ -254,8 +255,8 @@ export const CheckoutView: React.FC = () => {
                 type="button"
                 onClick={() => setOrderType('delivery')}
                 className={`py-2 px-3 rounded-lg border text-xs font-semibold transition-all flex flex-col items-center gap-1 cursor-pointer ${orderType === 'delivery'
-                    ? 'bg-[#FDF2EB] border-[#D94814] text-[#D94814] font-bold'
-                    : 'bg-[#FAF9F5] border-[#E8E5DD] text-[#47433F] hover:bg-[#F4F2EC]'
+                  ? 'bg-[#FDF2EB] border-[#D94814] text-[#D94814] font-bold'
+                  : 'bg-[#FAF9F5] border-[#E8E5DD] text-[#47433F] hover:bg-[#F4F2EC]'
                   }`}
               >
                 <span className="text-base">🛵</span>
@@ -266,8 +267,8 @@ export const CheckoutView: React.FC = () => {
                 type="button"
                 onClick={() => setOrderType('pickup')}
                 className={`py-2 px-3 rounded-lg border text-xs font-semibold transition-all flex flex-col items-center gap-1 cursor-pointer ${orderType === 'pickup'
-                    ? 'bg-[#FDF2EB] border-[#D94814] text-[#D94814] font-bold'
-                    : 'bg-[#FAF9F5] border-[#E8E5DD] text-[#47433F] hover:bg-[#F4F2EC]'
+                  ? 'bg-[#FDF2EB] border-[#D94814] text-[#D94814] font-bold'
+                  : 'bg-[#FAF9F5] border-[#E8E5DD] text-[#47433F] hover:bg-[#F4F2EC]'
                   }`}
               >
                 <span className="text-base">🛍️</span>
@@ -278,8 +279,8 @@ export const CheckoutView: React.FC = () => {
                 type="button"
                 onClick={() => setOrderType('dine_in')}
                 className={`py-2 px-3 rounded-lg border text-xs font-semibold transition-all flex flex-col items-center gap-1 cursor-pointer ${orderType === 'dine_in'
-                    ? 'bg-[#FDF2EB] border-[#D94814] text-[#D94814] font-bold'
-                    : 'bg-[#FAF9F5] border-[#E8E5DD] text-[#47433F] hover:bg-[#F4F2EC]'
+                  ? 'bg-[#FDF2EB] border-[#D94814] text-[#D94814] font-bold'
+                  : 'bg-[#FAF9F5] border-[#E8E5DD] text-[#47433F] hover:bg-[#F4F2EC]'
                   }`}
               >
                 <span className="text-base">🍽️</span>
@@ -423,13 +424,32 @@ export const CheckoutView: React.FC = () => {
           </div>
         </div>
 
-        {/* 2. Order Summary & WhatsApp Trigger */}
+        {/* 2. Scan & Pay via UPI */}
+        <div className="bg-white rounded-xl p-5 sm:p-6 border border-[#E8E5DD] shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-4">
+          <div className="flex flex-col items-center">
+            <h4 className="font-serif text-base font-bold text-[#1A1816] mb-3">2. Scan & Pay via UPI (₹{grandTotal})</h4>
+            <div className="bg-white p-2 rounded-xl border border-[#E8E5DD] shadow-sm">
+              <Image
+                src="/gumti-qr.jpeg"
+                alt="UPI Payment QR"
+                width={180}
+                height={180}
+                className="rounded-lg object-contain"
+              />
+            </div>
+            <p className="text-[11px] text-[#7D7872] mt-3 text-center max-w-xs">
+              Take a screenshot after payment and send it along with your order on WhatsApp in the next step.
+            </p>
+          </div>
+        </div>
+
+        {/* 3. Order Summary & WhatsApp Trigger */}
         <div className="bg-white rounded-xl p-5 sm:p-6 border border-[#E8E5DD] shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-4">
           <div className="flex items-center justify-between border-b border-[#F0EDE5] pb-3">
             <div className="flex items-center gap-2">
               <Store className="w-4 h-4 text-[#D94814]" />
               <h3 className="font-serif text-base font-bold text-[#1A1816]">
-                2. Bill Summary
+                3. Bill Summary
               </h3>
             </div>
             <span className="text-xs font-bold text-[#7D7872]">
@@ -459,7 +479,7 @@ export const CheckoutView: React.FC = () => {
               </span>
             </button>
             <p className="text-[11px] text-[#7D7872] text-center mt-2">
-              Opens WhatsApp with pre-formatted kitchen order ticket. Pay via UPI or Cash upon delivery/serving.
+              Opens WhatsApp with pre-formatted kitchen order ticket.
             </p>
           </div>
         </div>
