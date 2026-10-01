@@ -5,11 +5,18 @@ export const ADMIN_COOKIE_NAME = 'gumti_admin_session';
 
 // Secrets & credentials with safe defaults
 const getJwtSecret = () => {
-  const secret = process.env.ADMIN_JWT_SECRET || 'gumti_fallback_secret_key_2026_cafe_secure';
-  return new TextEncoder().encode(secret);
+  const secret = process.env.ADMIN_JWT_SECRET;
+  if (process.env.NODE_ENV === 'production' && (!secret || secret.length < 32)) {
+    throw new Error('ADMIN_JWT_SECRET must be configured with at least 32 characters in production.');
+  }
+  const signingSecret = secret || 'gumti_fallback_secret_key_2026_cafe_secure';
+  return new TextEncoder().encode(signingSecret);
 };
 
 export const getExpectedAdminCredentials = () => {
+  if (process.env.NODE_ENV === 'production' && (!process.env.ADMIN_USERNAME || !process.env.ADMIN_PASSWORD)) {
+    throw new Error('ADMIN_USERNAME and ADMIN_PASSWORD must be configured in production.');
+  }
   return {
     username: (process.env.ADMIN_USERNAME || 'admin').trim(),
     password: (process.env.ADMIN_PASSWORD || 'gumti@admin2026').trim(),

@@ -19,19 +19,29 @@ export const LocationModal: React.FC = () => {
   } = useApp();
   const { modalRef } = useModalAccessibility(isLocationModalOpen, () => setIsLocationModalOpen(false));
 
-  const [street, setStreet] = useState(guestCustomer.street || currentAddress.street || '');
-  const [area, setArea] = useState(guestCustomer.area || currentAddress.area || restaurantProfile.locality);
+  const [street, setStreet] = useState(guestCustomer.street || currentAddress?.street || '');
+  const [area, setArea] = useState(guestCustomer.area || currentAddress?.area || restaurantProfile.locality);
 
   if (!isLocationModalOpen) return null;
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    const updatedAddr: DeliveryAddress = {
+    const updatedAddr: DeliveryAddress = currentAddress ? {
       ...currentAddress,
       street: street.trim(),
       area: area.trim(),
       city: restaurantProfile.city,
       pincode: restaurantProfile.pincode,
+    } : {
+      id: `addr-${Date.now()}`,
+      type: 'Home',
+      label: 'Home',
+      street: street.trim(),
+      area: area.trim(),
+      city: restaurantProfile.city,
+      pincode: restaurantProfile.pincode,
+      phone: guestCustomer.phone,
+      isDefault: true,
     };
     setCurrentAddress(updatedAddr);
     updateGuestCustomer({ street: street.trim(), area: area.trim() });

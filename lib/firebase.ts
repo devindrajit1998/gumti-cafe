@@ -18,6 +18,18 @@ const firebaseConfig = {
     measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || '',
 };
 
+const requiredConfig = [
+    'apiKey',
+    'authDomain',
+    'projectId',
+    'appId',
+] as const;
+const missingConfig = requiredConfig.filter((key) => !firebaseConfig[key]);
+
+if (missingConfig.length > 0) {
+    throw new Error(`Firebase is not configured. Missing: ${missingConfig.map((key) => `NEXT_PUBLIC_FIREBASE_${key.replace(/[A-Z]/g, (letter) => `_${letter}`).toUpperCase()}`).join(', ')}`);
+}
+
 const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 export const firestore = getFirestore(firebaseApp);
 

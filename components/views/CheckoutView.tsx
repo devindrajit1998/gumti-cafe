@@ -52,6 +52,7 @@ export const CheckoutView: React.FC = () => {
     guestCustomer,
     updateGuestCustomer,
     placeOrder,
+    isFirebaseConnected,
     navigateTo,
     showToast,
     scheduledDelivery,
@@ -63,7 +64,9 @@ export const CheckoutView: React.FC = () => {
   const [customerName, setCustomerName] = useState(guestCustomer.name || '');
   const [customerPhone, setCustomerPhone] = useState(guestCustomer.phone || '');
   const [customerStreet, setCustomerStreet] = useState(guestCustomer.street || '');
-  const [customerArea, setCustomerArea] = useState(guestCustomer.area || restaurantProfile.locality);
+  const [customerArea, setCustomerArea] = useState(guestCustomer.area || '');
+  const [customerCity, setCustomerCity] = useState(guestCustomer.city || '');
+  const [customerPincode, setCustomerPincode] = useState(guestCustomer.pincode || '');
   const [specialNotes, setSpecialNotes] = useState(guestCustomer.specialNotes || '');
   const [showPreview, setShowPreview] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -92,8 +95,8 @@ export const CheckoutView: React.FC = () => {
         type: 'Home',
         street: customerStreet || 'Delivery Address',
         area: customerArea,
-        city: restaurantProfile.city,
-        pincode: restaurantProfile.pincode,
+        city: customerCity,
+        pincode: customerPincode,
         phone: customerPhone,
       },
       customerName,
@@ -139,7 +142,7 @@ export const CheckoutView: React.FC = () => {
     }
   };
 
-  const handleCompleteWhatsAppOrder = (e: React.FormEvent) => {
+  const handleCompleteWhatsAppOrder = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const trimmedName = customerName.trim();
@@ -164,6 +167,14 @@ export const CheckoutView: React.FC = () => {
       showToast('Please provide your delivery address', undefined, 'error');
       return;
     }
+    if (orderType === 'delivery' && (!customerCity.trim() || !/^\d{6}$/.test(customerPincode.trim()))) {
+      showToast('Please enter your city and a valid 6-digit pincode', undefined, 'error');
+      return;
+    }
+    if (!isFirebaseConnected) {
+      showToast('Ordering is temporarily unavailable', 'Please try again when the restaurant connection is restored.', 'error');
+      return;
+    }
 
     setIsProcessing(true);
 
@@ -176,24 +187,36 @@ export const CheckoutView: React.FC = () => {
       specialNotes: specialNotes.trim(),
     });
 
-    // Trigger confetti
+    // Reserve a WhatsApp tab during the click so popup blockers do not prevent dispatch.
+    const whatsappWindow = window.open('about:blank', '_blank');
     try {
-      confetti({
-        particleCount: 70,
-        spread: 60,
-        origin: { y: 0.6 },
-      });
-    } catch (err) { }
-
-    // Dispatch order to WhatsApp
-    setTimeout(() => {
-      placeOrder({
+      const order = await placeOrder({
         specialNotes: specialNotes.trim(),
         overrideOrderType: orderType,
         overrideTableNumber: tableNumber,
+        overrideCustomer: {
+          name: customerName.trim(),
+          phone: customerPhone.trim(),
+          street: customerStreet.trim(),
+          area: customerArea.trim(),
+          city: customerCity.trim(),
+          pincode: customerPincode.trim(),
+        }
       });
+      if (whatsappWindow) {
+        whatsappWindow.location.href = order.whatsappUrl;
+      } else {
+        window.location.href = order.whatsappUrl;
+      }
+      try {
+        confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+      } catch { }
+    } catch (error) {
+      whatsappWindow?.close();
+      showToast('Order was not saved', error instanceof Error ? error.message : 'Please retry checkout.', 'error');
+    } finally {
       setIsProcessing(false);
-    }, 400);
+    }
   };
 
   if (cart.length === 0) {
@@ -381,9 +404,22 @@ export const CheckoutView: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    disabled
-                    value={`${restaurantProfile.city} - ${restaurantProfile.pincode}`}
-                    className="w-full px-3 py-2 rounded-lg border border-[#E8E5DD] bg-[#FAF9F5] text-xs text-[#7D7872]"
+                    value={customerCity}
+                    onChange={(e) => setCustomerCity(e.target.value)}
+                    placeholder="e.g. Kolkata"
+                    className="w-full px-3 py-2 rounded-lg border border-[#E8E5DD] text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-[#1A1816] block mb-1">
+                    Pincode
+                  </label>
+                  <input
+                    type="text"
+                    value={customerPincode}
+                    onChange={(e) => setCustomerPincode(e.target.value)}
+                    placeholder="e.g. 700001"
+                    className="w-full px-3 py-2 rounded-lg border border-[#E8E5DD] text-xs"
                   />
                 </div>
               </div>
@@ -470,12 +506,12 @@ export const CheckoutView: React.FC = () => {
           <div className="pt-2">
             <button
               type="submit"
-              disabled={isProcessing}
+              disabled={isProcessing || !isFirebaseConnected}
               className="w-full py-3.5 bg-[#22C55E] hover:bg-[#16A34A] text-white font-bold text-sm rounded-lg transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer active:scale-95"
             >
               <MessageCircle className="w-5 h-5 fill-current" />
               <span>
-                {isProcessing ? 'Preparing WhatsApp Dispatch...' : `Send Order to WhatsApp (₹${grandTotal})`}
+                {isProcessing ? 'Saving Order...' : !isFirebaseConnected ? 'Ordering Temporarily Unavailable' : `Send Order to WhatsApp (₹${grandTotal})`}
               </span>
             </button>
             <p className="text-[11px] text-[#7D7872] text-center mt-2">

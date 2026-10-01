@@ -914,19 +914,32 @@ export const AdminMenuView: React.FC = () => {
                         </div>
 
                         {/* Customer Information */}
-                        <div className="py-3 bg-zinc-50/70 -mx-5 px-5 my-2 border-y border-zinc-100 flex items-center justify-between text-xs">
-                          <div>
-                            <span className="font-black text-zinc-900 block">{order.customerName || 'Guest Customer'}</span>
-                            <span className="text-zinc-500 text-[11px]">{order.customerPhone || 'Phone not provided'}</span>
+                        <div className="py-3 bg-zinc-50/70 -mx-5 px-5 my-2 border-y border-zinc-100 flex flex-col gap-2 text-xs">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <span className="font-black text-zinc-900 block">{order.customerName || 'Guest Customer'}</span>
+                              <span className="text-zinc-500 text-[11px]">{order.customerPhone || 'Phone not provided'}</span>
+                            </div>
+                            {order.customerPhone && (
+                              <a
+                                href={`tel:${order.customerPhone}`}
+                                className="px-2.5 py-1 bg-white border border-zinc-200 hover:bg-zinc-100 rounded-lg text-zinc-700 text-xs font-bold flex items-center gap-1"
+                              >
+                                <Phone className="w-3 h-3 text-emerald-600" />
+                                <span>Call</span>
+                              </a>
+                            )}
                           </div>
-                          {order.customerPhone && (
-                            <a
-                              href={`tel:${order.customerPhone}`}
-                              className="px-2.5 py-1 bg-white border border-zinc-200 hover:bg-zinc-100 rounded-lg text-zinc-700 text-xs font-bold flex items-center gap-1"
-                            >
-                              <Phone className="w-3 h-3 text-emerald-600" />
-                              <span>Call</span>
-                            </a>
+                          
+                          {/* Display Address if Delivery */}
+                          {order.orderType === 'delivery' && order.deliveryAddress && (
+                            <div className="mt-1 flex items-start gap-1.5 text-zinc-600 border-t border-dashed border-zinc-200 pt-2">
+                              <MapPin className="w-3.5 h-3.5 text-orange-600 shrink-0 mt-0.5" />
+                              <div className="flex flex-col text-[11px]">
+                                <span className="font-semibold text-zinc-800">{order.deliveryAddress.street}</span>
+                                <span>{order.deliveryAddress.area}, {order.deliveryAddress.city} - {order.deliveryAddress.pincode}</span>
+                              </div>
+                            </div>
                           )}
                         </div>
 

@@ -1,34 +1,36 @@
 import { GoogleGenAI } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
-import { RESTAURANTS } from '@/lib/data';
+import type { MenuItem } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
-// Simplified catalog for Gemini context
-const menuCatalog = RESTAURANTS.map((r) => ({
-  restaurantId: r.id,
-  restaurantName: r.name,
-  cuisine: r.cuisines.join(', '),
-  rating: r.rating,
-  deliveryTime: `${r.deliveryTimeMin}-${r.deliveryTimeMax}m`,
-  popularItems: r.menu.map((m) => ({
-    itemId: m.id,
-    name: m.name,
-    price: m.price,
-    vegType: m.vegType,
-    category: m.category,
-    description: m.description,
-    isBestseller: m.isBestseller,
-  })),
-}));
-
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, dietPreference, budget, partySize } = await req.json();
+    const { prompt, dietPreference, budget, partySize, menuItems, restaurantName } = await req.json();
 
     if (!prompt || typeof prompt !== 'string') {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
     }
+
+    const menu = Array.isArray(menuItems) ? menuItems as MenuItem[] : [];
+    if (menu.length === 0) {
+      return NextResponse.json({ error: 'The live menu is not available yet.' }, { status: 503 });
+    }
+    const restaurantId = menu[0].restaurantId || 'my-restaurant';
+    const safeRestaurantName = typeof restaurantName === 'string' ? restaurantName : 'Restaurant';
+    const menuCatalog = [{
+      restaurantId,
+      restaurantName: safeRestaurantName,
+      popularItems: menu.filter((item) => item && typeof item.id === 'string' && typeof item.name === 'string').map((item) => ({
+        itemId: item.id,
+        name: item.name,
+        price: item.price,
+        vegType: item.vegType,
+        category: item.category,
+        description: item.description,
+        isBestseller: item.isBestseller,
+      })),
+    }];
 
     const apiKey = process.env.GEMINI_API_KEY;
 
@@ -110,19 +112,18 @@ ${JSON.stringify(menuCatalog)}
       recommendationReason: string;
     }> = [];
 
-    for (const r of RESTAURANTS) {
-      for (const m of r.menu) {
+    for (const m of menu) {
         if (isVegOnly && m.vegType !== 'veg') continue;
 
         const matchesWord = lowerPrompt.split(' ').some((w) => 
-          w.length > 2 && (m.name.toLowerCase().includes(w) || m.category.toLowerCase().includes(w) || r.name.toLowerCase().includes(w))
+          w.length > 2 && (m.name.toLowerCase().includes(w) || m.category.toLowerCase().includes(w) || safeRestaurantName.toLowerCase().includes(w))
         );
 
         if (matchesWord || m.isBestseller) {
           matches.push({
             itemId: m.id,
-            restaurantId: r.id,
-            restaurantName: r.name,
+            restaurantId,
+            restaurantName: safeRestaurantName,
             name: m.name,
             price: m.price,
             vegType: m.vegType,
@@ -130,20 +131,22 @@ ${JSON.stringify(menuCatalog)}
           });
           if (matches.length >= 3) break;
         }
-      }
       if (matches.length >= 3) break;
     }
 
     // Default fallback if no match
     if (matches.length === 0) {
-      const firstRest = RESTAURANTS[0];
+      const firstItem = menu.find((item) => !isVegOnly || item.vegType === 'veg');
+      if (!firstItem) {
+        return NextResponse.json({ error: 'No matching dishes are available.' }, { status: 404 });
+      }
       matches.push({
-        itemId: firstRest.menu[0].id,
-        restaurantId: firstRest.id,
-        restaurantName: firstRest.name,
-        name: firstRest.menu[0].name,
-        price: firstRest.menu[0].price,
-        vegType: firstRest.menu[0].vegType,
+        itemId: firstItem.id,
+        restaurantId,
+        restaurantName: safeRestaurantName,
+        name: firstItem.name,
+        price: firstItem.price,
+        vegType: firstItem.vegType,
         recommendationReason: 'Signature bestseller dish loved by thousands across the city.',
       });
     }

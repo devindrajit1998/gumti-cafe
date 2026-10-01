@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useModalAccessibility } from '@/hooks/useModalAccessibility';
-import { RESTAURANTS, ALL_MENU_ITEMS } from '@/lib/data';
 import {
   Sparkles,
   X,
@@ -51,6 +50,8 @@ export const ZaikaAiAssistantModal: React.FC = () => {
     isAiAssistantOpen,
     setIsAiAssistantOpen,
     addToCart,
+    restaurantMenu,
+    restaurantProfile,
     navigateTo,
     showToast,
   } = useApp();
@@ -81,6 +82,8 @@ export const ZaikaAiAssistantModal: React.FC = () => {
           dietPreference: diet,
           budget: budget ? parseInt(budget, 10) : undefined,
           partySize,
+          menuItems: restaurantMenu,
+          restaurantName: restaurantProfile.name,
         }),
       });
 
@@ -90,42 +93,37 @@ export const ZaikaAiAssistantModal: React.FC = () => {
       setResult(data);
     } catch (err) {
       console.error(err);
-      showToast('Chef recommendation generated', 'Matched from our top rated menus', 'info');
-      // Fallback result
-      const sampleRest = RESTAURANTS[0];
-      const sampleItem = sampleRest.menu[0];
-      setResult({
-        heading: 'Chef Special Recommendation',
-        reasoning: `Selected based on your craving for "${activePrompt}".`,
-        recommendedItems: [
-          {
-            itemId: sampleItem.id,
-            restaurantId: sampleRest.id,
-            restaurantName: sampleRest.name,
-            name: sampleItem.name,
-            price: sampleItem.price,
-            vegType: sampleItem.vegType,
-            recommendationReason: 'Signature aromatic dish with authentic spices.',
-          },
-        ],
-        estimatedMealCost: sampleItem.price,
-        pairingTip: 'Pair with chilled spiced buttermilk or warm gulab jamuns for the best experience!',
-      });
+      const fallbackItem = restaurantMenu[0];
+      if (fallbackItem) {
+        setResult({
+          heading: 'Chef Special Recommendation',
+          reasoning: `Selected from the live menu for your craving: "${activePrompt}".`,
+          recommendedItems: [{
+            itemId: fallbackItem.id,
+            restaurantId: fallbackItem.restaurantId,
+            restaurantName: restaurantProfile.name,
+            name: fallbackItem.name,
+            price: fallbackItem.price,
+            vegType: fallbackItem.vegType,
+            recommendationReason: 'Available from the current restaurant menu.',
+          }],
+          estimatedMealCost: fallbackItem.price,
+          pairingTip: 'Ask the kitchen which sides pair best with your selection.',
+        });
+      } else {
+        showToast('Live menu unavailable', 'Please try again after the menu loads.', 'error');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleAddItem = (itemRec: AiRecommendedItem) => {
-    const menuItem = ALL_MENU_ITEMS.find((m) => m.id === itemRec.itemId);
+    const menuItem = restaurantMenu.find((m) => m.id === itemRec.itemId);
     if (menuItem) {
       addToCart(menuItem);
     } else {
-      // Find fallback
-      const parentRest = RESTAURANTS.find((r) => r.id === itemRec.restaurantId);
-      if (parentRest && parentRest.menu.length > 0) {
-        addToCart(parentRest.menu[0]);
-      }
+      showToast('Dish no longer available', 'Please refresh the menu and try again.', 'error');
     }
   };
 
@@ -134,7 +132,7 @@ export const ZaikaAiAssistantModal: React.FC = () => {
 
     let addedCount = 0;
     for (const rec of result.recommendedItems) {
-      const found = ALL_MENU_ITEMS.find((m) => m.id === rec.itemId);
+      const found = restaurantMenu.find((m) => m.id === rec.itemId);
       if (found) {
         addToCart(found);
         addedCount++;

@@ -26,12 +26,9 @@ import {
   ZaikaBackupData,
 } from '@/lib/types';
 import {
-  COUPONS,
   DEFAULT_RESTAURANT_PROFILE,
   RESTAURANTS,
-  SAMPLE_ADDRESSES,
   ALL_MENU_ITEMS,
-  DEFAULT_CUSTOMERS,
   DEFAULT_ANNOUNCEMENT,
   DEFAULT_BANNERS,
   migrateLegacyAnnouncement,
@@ -89,6 +86,7 @@ interface AppContextType {
   restaurantProfile: RestaurantProfile;
   updateRestaurantProfile: (updated: Partial<RestaurantProfile>) => void;
   isLoadingMenu: boolean;
+  isFirebaseConnected: boolean;
   restaurantMenu: MenuItem[];
   addMenuItem: (item: Omit<MenuItem, 'id' | 'restaurantId' | 'rating' | 'ratingCount'>) => void;
   updateMenuItem: (id: string, updated: Partial<MenuItem>) => void;
@@ -152,7 +150,8 @@ interface AppContextType {
     specialNotes?: string;
     overrideOrderType?: OrderType;
     overrideTableNumber?: string;
-  }) => { orderId: string; whatsappUrl: string; message: string };
+    overrideCustomer?: Partial<GuestCustomerInfo>;
+  }) => Promise<{ orderId: string; whatsappUrl: string; message: string }>;
   reorder: (order: Order) => void;
   trackOrder: (order: Order) => void;
   cancelActiveOrder: () => void;
@@ -217,8 +216,8 @@ interface AppContextType {
   user: { isLoggedIn: boolean; name: string; phone: string; email: string };
   loginUser: (name: string, phone: string, email?: string) => void;
   logoutUser: () => void;
-  currentAddress: DeliveryAddress;
-  setCurrentAddress: (addr: DeliveryAddress) => void;
+  currentAddress: DeliveryAddress | null;
+  setCurrentAddress: (addr: DeliveryAddress | null) => void;
   savedAddresses: DeliveryAddress[];
   setSavedAddresses: (addrs: DeliveryAddress[]) => void;
   favoriteRestaurants: string[];
@@ -275,221 +274,6 @@ const defaultFilters: FilterOptions = {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-// Initial curated menu for the user's restaurant
-const LEGACY_RESTAURANT_ITEMS: MenuItem[] = [
-  {
-    id: 'zk-m1',
-    restaurantId: 'my-restaurant',
-    name: 'Royal Murgh Dum Biryani (Chef Special)',
-    description: 'Slow-cooked fragrant long-grain Basmati rice layered with succulent chicken pieces, saffron, aromatic royal spices, and golden browned onions. Served with Burani Raita & Salan.',
-    price: 349,
-    originalPrice: 420,
-    image: 'https://images.unsplash.com/photo-1589302168068-964664d93dc0?q=80&w=1200&auto=format&fit=crop',
-    category: 'Dum Biryani & Rice 🍚',
-    vegType: 'non-veg',
-    rating: 4.9,
-    ratingCount: 1420,
-    isBestseller: true,
-    spiceLevel: 2,
-    isAvailable: true,
-    preparationTime: '20-25 mins',
-    portionSize: 'Serves 1-2 (750g)',
-    customizationGroups: [
-      {
-        id: 'portion',
-        title: 'Choose Portion Size',
-        type: 'radio',
-        options: [
-          { id: 'regular', name: 'Regular (Serves 1)', price: 0 },
-          { id: 'jumbo', name: 'Jumbo Feast (Serves 2-3)', price: 180 },
-        ],
-      },
-      {
-        id: 'addons',
-        title: 'Add Extra Accompaniments',
-        type: 'checkbox',
-        options: [
-          { id: 'extra-salan', name: 'Extra Mirchi Ka Salan', price: 40 },
-          { id: 'extra-raita', name: 'Burani Garlic Raita', price: 45 },
-          { id: 'boiled-egg', name: '2 Extra Boiled Eggs', price: 35 },
-          { id: 'gulab-jamun', name: '2 Pcs Warm Gulab Jamun', price: 60 },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'zk-m2',
-    restaurantId: 'my-restaurant',
-    name: 'Tandoori Murgh Tikka (8 Pcs)',
-    description: 'Boneless tender chicken chunks marinated overnight in hung curd, Kashmiri red chili paste, and roasted spices, smoked in a clay tandoor. Served with mint chutney.',
-    price: 320,
-    originalPrice: 380,
-    image: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?q=80&w=1200&auto=format&fit=crop',
-    category: 'Starters & Kebabs 🍢',
-    vegType: 'non-veg',
-    rating: 4.8,
-    ratingCount: 980,
-    isBestseller: true,
-    spiceLevel: 2,
-    isAvailable: true,
-    preparationTime: '15-20 mins',
-  },
-  {
-    id: 'zk-m3',
-    restaurantId: 'my-restaurant',
-    name: 'Paneer Butter Masala (Old Delhi Style)',
-    description: 'Cottage cheese cubes tossed in a rich, buttery, velvety tomato-cashew gravy with a hint of dried fenugreek leaves and fresh cream.',
-    price: 280,
-    originalPrice: 320,
-    image: 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?q=80&w=1200&auto=format&fit=crop',
-    category: 'Main Course (Curries) 🥘',
-    vegType: 'veg',
-    rating: 4.9,
-    ratingCount: 1150,
-    isBestseller: true,
-    spiceLevel: 1,
-    isAvailable: true,
-    preparationTime: '15-20 mins',
-  },
-  {
-    id: 'zk-m4',
-    restaurantId: 'my-restaurant',
-    name: 'Butter Naan / Garlic Naan Basket',
-    description: 'Freshly baked refined flour bread tossed with melted butter, roasted garlic, and chopped coriander leaves, charred in the clay tandoor.',
-    price: 65,
-    originalPrice: 80,
-    image: 'https://images.unsplash.com/photo-1618841559317-5c1d707c922a?q=80&w=1200&auto=format&fit=crop',
-    category: 'Tandoori Breads 🫓',
-    vegType: 'veg',
-    rating: 4.7,
-    ratingCount: 820,
-    isBestseller: false,
-    spiceLevel: 0,
-    isAvailable: true,
-    preparationTime: '10 mins',
-  },
-  {
-    id: 'zk-m5',
-    restaurantId: 'my-restaurant',
-    name: 'Nawabi Mutton Galouti Kebab (4 Pcs)',
-    description: 'Melt-in-mouth smoked lamb patties blended with 32 secret spices, served on mini saffron Mughlai parathas with spiced onion rings.',
-    price: 390,
-    originalPrice: 460,
-    image: 'https://images.unsplash.com/photo-1599084993091-1cb5c0721cc6?q=80&w=1200&auto=format&fit=crop',
-    category: 'Chef Specials ⭐',
-    vegType: 'non-veg',
-    rating: 5.0,
-    ratingCount: 640,
-    isBestseller: true,
-    spiceLevel: 2,
-    isAvailable: true,
-    preparationTime: '20 mins',
-  },
-  {
-    id: 'zk-m6',
-    restaurantId: 'my-restaurant',
-    name: 'Shahi Paneer Tikka (6 Pcs)',
-    description: 'Plump fresh paneer cubes and crunchy bell peppers marinated in carom seeds, mustard oil, and spiced yogurt, grilled over charcoal embers.',
-    price: 260,
-    originalPrice: 299,
-    image: 'https://images.unsplash.com/photo-1565557623262-b51c2513a741?q=80&w=1200&auto=format&fit=crop',
-    category: 'Starters & Kebabs 🍢',
-    vegType: 'veg',
-    rating: 4.8,
-    ratingCount: 750,
-    isBestseller: true,
-    spiceLevel: 1,
-    isAvailable: true,
-    preparationTime: '15 mins',
-  },
-  {
-    id: 'zk-m7',
-    restaurantId: 'my-restaurant',
-    name: 'Dal Makhani Bukhara (Slow Cooked 24 Hours)',
-    description: 'Black lentils & kidney beans slow-simmered overnight over charcoal with tomato puree, white butter, and gentle mild spices. Pure indulgence.',
-    price: 240,
-    originalPrice: 280,
-    image: 'https://images.unsplash.com/photo-1584273103444-2300b0f7926e?q=80&w=1200&auto=format&fit=crop',
-    category: 'Main Course (Curries) 🥘',
-    vegType: 'veg',
-    rating: 4.9,
-    ratingCount: 1300,
-    isBestseller: true,
-    spiceLevel: 0,
-    isAvailable: true,
-    preparationTime: '10 mins',
-  },
-  {
-    id: 'zk-m8',
-    restaurantId: 'my-restaurant',
-    name: 'Hyderabadi Subz Veg Dum Biryani',
-    description: 'Layers of Basmati rice and fresh garden vegetables, paneer, and fried cashews infused with saffron milk, mint, and whole garam masala.',
-    price: 270,
-    originalPrice: 320,
-    image: 'https://images.unsplash.com/photo-1631515243349-e0cb75fb8d36?q=80&w=1200&auto=format&fit=crop',
-    category: 'Dum Biryani & Rice 🍚',
-    vegType: 'veg',
-    rating: 4.7,
-    ratingCount: 890,
-    isBestseller: false,
-    spiceLevel: 1,
-    isAvailable: true,
-    preparationTime: '15-20 mins',
-  },
-  {
-    id: 'zk-m9',
-    restaurantId: 'my-restaurant',
-    name: 'Royal Maharaja Non-Veg Thali Feast',
-    description: 'Complete royal platter with Murgh Tikka (2 pcs), Butter Chicken, Mutton Rogan Josh, Dal Makhani, Jeera Rice, 2 Butter Rotis, Raita & Gulab Jamun.',
-    price: 499,
-    originalPrice: 599,
-    image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1200&auto=format&fit=crop',
-    category: 'Royal Combos & Thalis 🍱',
-    vegType: 'non-veg',
-    rating: 4.9,
-    ratingCount: 520,
-    isBestseller: true,
-    spiceLevel: 2,
-    isAvailable: true,
-    preparationTime: '20 mins',
-  },
-  {
-    id: 'zk-m10',
-    restaurantId: 'my-restaurant',
-    name: 'Kesariya Shahi Firni & Rabri Kulfi Duo',
-    description: 'Traditional slow-cooked ground rice pudding flavored with Kashmiri saffron & cardamom, paired with a rich dry-fruit malai kulfi stick.',
-    price: 160,
-    originalPrice: 190,
-    image: 'https://images.unsplash.com/photo-1579613832111-ac7dfcc7723f?q=80&w=1200&auto=format&fit=crop',
-    category: 'Desserts & Kulfi 🍨',
-    vegType: 'veg',
-    rating: 4.9,
-    ratingCount: 680,
-    isBestseller: true,
-    spiceLevel: 0,
-    isAvailable: true,
-    preparationTime: '5 mins',
-  },
-  {
-    id: 'zk-m11',
-    restaurantId: 'my-restaurant',
-    name: 'Royal Mango Lassi / Spiced Chaas Pitcher',
-    description: 'Thick, creamy churned yogurt blended with Alphonso mango pulp and topped with pistachio slivers.',
-    price: 99,
-    originalPrice: 120,
-    image: 'https://images.unsplash.com/photo-1557800636-894a64c1696f?q=80&w=1200&auto=format&fit=crop',
-    category: 'Beverages & Shakes 🥤',
-    vegType: 'veg',
-    rating: 4.8,
-    ratingCount: 430,
-    isBestseller: false,
-    spiceLevel: 0,
-    isAvailable: true,
-    preparationTime: '5 mins',
-  },
-];
-
-const INITIAL_RESTAURANT_ITEMS: MenuItem[] = GHUTI_CAFE_MENU;
 
 export const AppProvider: React.FC<{
   children: React.ReactNode;
@@ -507,6 +291,7 @@ export const AppProvider: React.FC<{
   }, []);
 
   const [isLoadingMenu, setIsLoadingMenu] = useState(true);
+  const [isFirebaseConnected, setIsFirebaseConnected] = useState(false);
   const [activeView, setActiveView] = useState<ActiveView>(initialView);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(initialCategory);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -517,35 +302,11 @@ export const AppProvider: React.FC<{
     'Tandoori Tikka',
   ]);
 
-  // Restaurant Profile (Owner managed)
-  const [restaurantProfile, setRestaurantProfile] = useState<RestaurantProfile>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('gumti_cafe_profile');
-        if (saved) {
-          const parsed = JSON.parse(saved) as RestaurantProfile;
-          if (parsed && typeof parsed === 'object') {
-            return { ...DEFAULT_RESTAURANT_PROFILE, ...parsed };
-          }
-        }
-      } catch { }
-    }
-    return DEFAULT_RESTAURANT_PROFILE;
-  });
+  // Restaurant Profile — loaded exclusively from Firebase
+  const [restaurantProfile, setRestaurantProfile] = useState<RestaurantProfile>(DEFAULT_RESTAURANT_PROFILE);
 
-  // Restaurant Menu Items (Owner managed with persistence)
-  const [restaurantMenu, setRestaurantMenu] = useState<MenuItem[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('gumti_cafe_menu');
-        if (saved) {
-          const parsed = JSON.parse(saved) as MenuItem[];
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        }
-      } catch { }
-    }
-    return INITIAL_RESTAURANT_ITEMS;
-  });
+  // Restaurant Menu — loaded exclusively from Firebase
+  const [restaurantMenu, setRestaurantMenu] = useState<MenuItem[]>([]);
 
   // Order Modes & Dine-in table
   const [orderType, setOrderType] = useState<OrderType>(() => {
@@ -578,13 +339,13 @@ export const AppProvider: React.FC<{
       } catch { }
     }
     return {
-      name: 'Indrajit Ghosh',
-      phone: '+91 98765 43210',
-      street: 'Flat 402, Green Glen Layout, 100ft Road',
-      area: 'Indiranagar',
-      city: 'Bengaluru',
-      pincode: '560038',
-      specialNotes: 'Ring bell once, deliver hot with extra green chutney please',
+      name: '',
+      phone: '',
+      street: '',
+      area: '',
+      city: '',
+      pincode: '',
+      specialNotes: '',
     };
   });
 
@@ -697,7 +458,7 @@ export const AppProvider: React.FC<{
 
   // Reset menu
   const resetMenuToDefault = () => {
-    setRestaurantMenu(INITIAL_RESTAURANT_ITEMS);
+    setRestaurantMenu(GHUTI_CAFE_MENU);
     try {
       localStorage.removeItem('gumti_cafe_menu');
     } catch (e) {
@@ -747,174 +508,11 @@ export const AppProvider: React.FC<{
 
   // Orders State
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
-  const [pastOrders, setPastOrders] = useState<Order[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('gumti_past_orders');
-        if (saved) return JSON.parse(saved);
-      } catch { }
-    }
-    return [
-      {
-        id: 'ord-seed-1',
-        orderNumber: 'GC-94102',
-        restaurantId: 'my-restaurant',
-        restaurantName: DEFAULT_RESTAURANT_PROFILE.name,
-        restaurantImage: DEFAULT_RESTAURANT_PROFILE.logoImage,
-        restaurantAddress: DEFAULT_RESTAURANT_PROFILE.address,
-        items: [
-          {
-            id: 'item-cart-1',
-            menuItemId: 'dish-1',
-            restaurantId: 'my-restaurant',
-            restaurantName: DEFAULT_RESTAURANT_PROFILE.name,
-            name: 'Murgh Dum Biryani (Royal)',
-            price: 349,
-            vegType: 'non-veg',
-            image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=800&auto=format&fit=crop&q=80',
-            quantity: 2,
-            specialInstructions: 'Extra raita and salan please',
-          },
-          {
-            id: 'item-cart-2',
-            menuItemId: 'dish-2',
-            restaurantId: 'my-restaurant',
-            name: 'Butter Garlic Naan (Tandoor)',
-            price: 65,
-            vegType: 'veg',
-            image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=800&auto=format&fit=crop&q=80',
-            quantity: 3,
-          },
-        ],
-        itemTotal: 893,
-        deliveryFee: 0,
-        taxes: 45,
-        discount: 100,
-        platformFee: 0,
-        tip: 30,
-        grandTotal: 868,
-        status: 'preparing' as OrderStatus,
-        createdAt: '15 mins ago',
-        orderType: 'delivery',
-        customerName: 'Indrajit Ghosh',
-        customerPhone: '+91 98765 43210',
-        estimatedDeliveryTime: '25-35 mins',
-        deliveryAddress: {
-          id: 'addr-1',
-          type: 'Home',
-          street: 'Flat 402, Green Glen Layout, 100ft Road',
-          area: 'Indiranagar',
-          city: 'Bengaluru',
-          pincode: '560038',
-          phone: '+91 98765 43210',
-        },
-        paymentMethod: 'UPI (GPay / PhonePe)',
-        adminWhatsAppPhone: DEFAULT_RESTAURANT_PROFILE.whatsappPhone,
-      },
-      {
-        id: 'ord-seed-2',
-        orderNumber: 'GC-94101',
-        restaurantId: 'my-restaurant',
-        restaurantName: DEFAULT_RESTAURANT_PROFILE.name,
-        restaurantImage: DEFAULT_RESTAURANT_PROFILE.logoImage,
-        restaurantAddress: DEFAULT_RESTAURANT_PROFILE.address,
-        items: [
-          {
-            id: 'item-cart-3',
-            menuItemId: 'dish-3',
-            restaurantId: 'my-restaurant',
-            restaurantName: DEFAULT_RESTAURANT_PROFILE.name,
-            name: 'Paneer Tikka Angara',
-            price: 289,
-            vegType: 'veg',
-            image: 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=800&auto=format&fit=crop&q=80',
-            quantity: 1,
-          },
-          {
-            id: 'item-cart-4',
-            menuItemId: 'dish-4',
-            restaurantId: 'my-restaurant',
-            name: 'Dal Makhani Bukhara',
-            price: 279,
-            vegType: 'veg',
-            image: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=800&auto=format&fit=crop&q=80',
-            quantity: 1,
-          },
-        ],
-        itemTotal: 568,
-        deliveryFee: 0,
-        taxes: 28,
-        discount: 0,
-        platformFee: 0,
-        tip: 0,
-        grandTotal: 596,
-        status: 'confirmed' as OrderStatus,
-        createdAt: '25 mins ago',
-        orderType: 'dine_in',
-        tableNumber: '4',
-        customerName: 'Ananya Sharma',
-        customerPhone: '+91 98112 34567',
-        estimatedDeliveryTime: '10-15 mins to Table #4',
-        deliveryAddress: {
-          id: 'addr-table-4',
-          type: 'Other',
-          label: 'Dine-in Table #4',
-          street: 'Table #4 Ground Floor AC Hall',
-          area: 'Dine-In',
-          city: 'Bengaluru',
-          pincode: '560038',
-          phone: '+91 98112 34567',
-        },
-        paymentMethod: 'Pay at Counter / Table',
-        adminWhatsAppPhone: DEFAULT_RESTAURANT_PROFILE.whatsappPhone,
-      },
-      {
-        id: 'ord-seed-3',
-        orderNumber: 'GC-94098',
-        restaurantId: 'my-restaurant',
-        restaurantName: DEFAULT_RESTAURANT_PROFILE.name,
-        restaurantImage: DEFAULT_RESTAURANT_PROFILE.logoImage,
-        restaurantAddress: DEFAULT_RESTAURANT_PROFILE.address,
-        items: [
-          {
-            id: 'item-cart-5',
-            menuItemId: 'dish-5',
-            restaurantId: 'my-restaurant',
-            restaurantName: DEFAULT_RESTAURANT_PROFILE.name,
-            name: 'Royal Zaika Feast Thali',
-            price: 449,
-            vegType: 'veg',
-            image: 'https://images.unsplash.com/photo-1610057099443-fde8c4d50f91?w=800&auto=format&fit=crop&q=80',
-            quantity: 2,
-          },
-        ],
-        itemTotal: 898,
-        deliveryFee: 0,
-        taxes: 45,
-        discount: 50,
-        platformFee: 0,
-        tip: 20,
-        grandTotal: 913,
-        status: 'delivered' as OrderStatus,
-        createdAt: 'Yesterday, 8:45 PM',
-        orderType: 'delivery',
-        customerName: 'Vikramaditya Rao',
-        customerPhone: '+91 99008 87766',
-        estimatedDeliveryTime: 'Delivered',
-        deliveryAddress: {
-          id: 'addr-3',
-          type: 'Home',
-          street: 'Villa 14, Palm Meadows',
-          area: 'Whitefield',
-          city: 'Bengaluru',
-          pincode: '560066',
-          phone: '+91 99008 87766',
-        },
-        paymentMethod: 'Cash on Delivery',
-        adminWhatsAppPhone: DEFAULT_RESTAURANT_PROFILE.whatsappPhone,
-      },
-    ];
-  });
+  // Orders are loaded exclusively from Firebase via subscribeToRestaurantCloudData below.
+  // Do NOT seed from localStorage or hardcoded data - Firebase is the single source of truth.
+  const [pastOrders, setPastOrders] = useState<Order[]>([]);
+
+
 
   const updateOrderStatus = (orderId: string, status: OrderStatus) => {
     const updatedOrders = pastOrders.map((ord) => (ord.id === orderId ? { ...ord, status } : ord));
@@ -945,16 +543,8 @@ export const AppProvider: React.FC<{
     showToast('Order Deleted from Logs 🗑️', undefined, 'info');
   };
 
-  // Admin Coupons Management
-  const [adminCoupons, setAdminCoupons] = useState<Coupon[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('gumti_coupons');
-        if (saved) return JSON.parse(saved);
-      } catch { }
-    }
-    return COUPONS;
-  });
+  // Admin Coupons — loaded exclusively from Firebase
+  const [adminCoupons, setAdminCoupons] = useState<Coupon[]>([]);
 
   const addAdminCoupon = (coupon: Coupon) => {
     setAdminCoupons((prev) => {
@@ -995,16 +585,8 @@ export const AppProvider: React.FC<{
     showToast(`Coupon ${code} Deleted`, undefined, 'info');
   };
 
-  // Admin Categories Management
-  const [adminCategories, setAdminCategories] = useState<string[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('gumti_categories');
-        if (saved) return JSON.parse(saved);
-      } catch { }
-    }
-    return RESTAURANT_MENU_CATEGORIES;
-  });
+  // Admin Categories — loaded exclusively from Firebase
+  const [adminCategories, setAdminCategories] = useState<string[]>(RESTAURANT_MENU_CATEGORIES);
 
   const addAdminCategory = (category: string) => {
     const trimmed = category.trim();
@@ -1082,44 +664,7 @@ export const AppProvider: React.FC<{
     showToast('Reservation Form Settings Saved! ⚙️', 'Customer booking form updated', 'success');
   };
 
-  const [tableBookings, setTableBookings] = useState<TableBooking[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('gumti_table_bookings');
-        if (saved) return JSON.parse(saved);
-      } catch { }
-    }
-    return [
-      {
-        id: 'tb-101',
-        guestName: 'Ananya Roy',
-        guestPhone: '9830123456',
-        guestEmail: 'ananya.roy@example.com',
-        guestsCount: 4,
-        bookingDate: new Date().toISOString().split('T')[0],
-        timeSlot: '07:30 PM',
-        seatingArea: 'indoor',
-        specialOccasion: 'birthday',
-        specialNotes: 'Window side table if possible',
-        status: 'confirmed',
-        tableNumber: '4',
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: 'tb-102',
-        guestName: 'Sourav Mukherjee',
-        guestPhone: '9831987654',
-        guestsCount: 2,
-        bookingDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-        timeSlot: '08:00 PM',
-        seatingArea: 'outdoor',
-        specialOccasion: 'anniversary',
-        specialNotes: 'Anniversary celebration',
-        status: 'pending',
-        createdAt: new Date().toISOString(),
-      },
-    ];
-  });
+  const [tableBookings, setTableBookings] = useState<TableBooking[]>([]);
 
   const createTableBooking = useCallback(
     async (
@@ -1133,14 +678,15 @@ export const AppProvider: React.FC<{
         createdAt: new Date().toISOString(),
       };
 
-      setTableBookings((prev) => {
-        const next = [newBooking, ...prev];
-        try {
-          localStorage.setItem('gumti_table_bookings', JSON.stringify(next));
-        } catch (e) {
-          console.error(e);
-        }
-        return next;
+      const updatedBookings = [newBooking, ...tableBookings];
+      setTableBookings(() => {
+        try { localStorage.setItem('gumti_table_bookings', JSON.stringify(updatedBookings)); } catch (e) { console.error(e); }
+        return updatedBookings;
+      });
+
+      // Directly push to Firebase
+      void saveRestaurantCloudData({ bookings: updatedBookings }).catch((err: unknown) => {
+        console.warn('Direct booking sync to Firebase failed:', err);
       });
 
       // Generate WhatsApp Booking confirmation URL
@@ -1161,27 +707,29 @@ export const AppProvider: React.FC<{
   );
 
   const updateTableBookingStatus = (id: string, status: TableBookingStatus, tableNumber?: string) => {
-    setTableBookings((prev) => {
-      const next = prev.map((b) => (b.id === id ? { ...b, status, ...(tableNumber ? { tableNumber } : {}) } : b));
-      try {
-        localStorage.setItem('gumti_table_bookings', JSON.stringify(next));
-      } catch (e) {
-        console.error(e);
-      }
-      return next;
+    const updatedBookings = tableBookings.map((b) => (b.id === id ? { ...b, status, ...(tableNumber ? { tableNumber } : {}) } : b));
+    setTableBookings(() => {
+      try { localStorage.setItem('gumti_table_bookings', JSON.stringify(updatedBookings)); } catch (e) { console.error(e); }
+      return updatedBookings;
+    });
+
+    // Directly push to Firebase
+    void saveRestaurantCloudData({ bookings: updatedBookings }).catch((err: unknown) => {
+      console.warn('Direct booking status sync to Firebase failed:', err);
     });
     showToast(`Booking ${status.toUpperCase()} 🍽️`, undefined, 'success');
   };
 
   const deleteTableBooking = (id: string) => {
-    setTableBookings((prev) => {
-      const next = prev.filter((b) => b.id !== id);
-      try {
-        localStorage.setItem('gumti_table_bookings', JSON.stringify(next));
-      } catch (e) {
-        console.error(e);
-      }
-      return next;
+    const updatedBookings = tableBookings.filter((b) => b.id !== id);
+    setTableBookings(() => {
+      try { localStorage.setItem('gumti_table_bookings', JSON.stringify(updatedBookings)); } catch (e) { console.error(e); }
+      return updatedBookings;
+    });
+
+    // Directly push to Firebase
+    void saveRestaurantCloudData({ bookings: updatedBookings }).catch((err: unknown) => {
+      console.warn('Direct booking delete sync to Firebase failed:', err);
     });
     showToast('Booking Removed from Records 🗑️', undefined, 'info');
   };
@@ -1366,16 +914,8 @@ export const AppProvider: React.FC<{
   const activeHeroBanner = activeHeroBanners[0] ?? null;
   const activePromoBanners = activeHeroBanners;
 
-  // Customer CRM Records
-  const [adminCustomers, setAdminCustomers] = useState<CustomerRecord[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('gumti_customers');
-        if (saved) return JSON.parse(saved);
-      } catch { }
-    }
-    return DEFAULT_CUSTOMERS;
-  });
+  // Customer CRM Records — loaded exclusively from Firebase
+  const [adminCustomers, setAdminCustomers] = useState<CustomerRecord[]>([]);
 
   const addAdminCustomer = (customer: CustomerRecord) => {
     setAdminCustomers((prev) => {
@@ -1424,14 +964,14 @@ export const AppProvider: React.FC<{
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isCartWarningModalOpen, setIsCartWarningModalOpen] = useState<boolean>(false);
   const [pendingRestaurantItem, setPendingRestaurantItem] = useState<any>(null);
-  const [favoriteRestaurants, setFavoriteRestaurants] = useState<string[]>(['rest-1', 'rest-3']);
-  const [currentAddress, setCurrentAddress] = useState<DeliveryAddress>(SAMPLE_ADDRESSES[0]);
-  const [savedAddresses, setSavedAddresses] = useState<DeliveryAddress[]>(SAMPLE_ADDRESSES);
+  const [favoriteRestaurants, setFavoriteRestaurants] = useState<string[]>([]);
+  const [currentAddress, setCurrentAddress] = useState<DeliveryAddress | null>(null);
+  const [savedAddresses, setSavedAddresses] = useState<DeliveryAddress[]>([]);
   const [user, setUser] = useState({
     isLoggedIn: false,
-    name: 'Guest Customer',
-    phone: '+91 98765 43210',
-    email: 'guest@example.com',
+    name: '',
+    phone: '',
+    email: '',
   });
 
   const loginUser = (name: string, phone: string, email?: string) => {
@@ -1447,7 +987,7 @@ export const AppProvider: React.FC<{
   const logoutUser = () => {
     setUser({
       isLoggedIn: false,
-      name: 'Guest Customer',
+      name: '',
       phone: '',
       email: '',
     });
@@ -1518,7 +1058,7 @@ export const AppProvider: React.FC<{
       isGroup: false,
       code: '',
       hostName: '',
-      currentMember: guestCustomer.name || 'Indrajit Ghosh',
+      currentMember: guestCustomer.name || 'Guest',
     });
     showToast('Left group order session', undefined, 'info');
   };
@@ -1654,14 +1194,17 @@ export const AppProvider: React.FC<{
     );
   };
 
-  // Place Order on WhatsApp
-  const placeOrder = (options?: {
-    customAdminPhone?: string;
-    specialNotes?: string;
-    overrideOrderType?: OrderType;
-    overrideTableNumber?: string;
-  }): { orderId: string; whatsappUrl: string; message: string } => {
+  const placeOrder = async (options?: {
+      customAdminPhone?: string;
+      specialNotes?: string;
+      overrideOrderType?: OrderType;
+      overrideTableNumber?: string;
+      overrideCustomer?: Partial<GuestCustomerInfo>;
+    }): Promise<{ orderId: string; whatsappUrl: string; message: string }> => {
     if (cart.length === 0) return { orderId: '', whatsappUrl: '', message: '' };
+    if (!isFirebaseConnected || !firebaseReadyRef.current) {
+      throw new Error('The restaurant ordering service is unavailable. Please try again in a moment.');
+    }
 
     const finalOrderType = options?.overrideOrderType || orderType;
     const finalTable = options?.overrideTableNumber || tableNumber;
@@ -1669,15 +1212,17 @@ export const AppProvider: React.FC<{
     const orderId = `ord-${Date.now()}`;
     const orderNum = `GC-${Math.floor(10000 + Math.random() * 90000)}`;
 
+    const customerData = { ...guestCustomer, ...options?.overrideCustomer };
+
     const deliveryAddressObj: DeliveryAddress = {
       id: 'guest-addr',
       type: 'Home',
       label: finalOrderType === 'dine_in' ? `Dine-in Table #${finalTable}` : finalOrderType === 'pickup' ? 'Counter Pickup' : 'Delivery Address',
-      street: guestCustomer.street || 'Near Restaurant Area',
-      area: guestCustomer.area || restaurantProfile.locality,
-      city: guestCustomer.city || restaurantProfile.city,
-      pincode: guestCustomer.pincode || restaurantProfile.pincode,
-      phone: guestCustomer.phone || '+91 98765 43210',
+      street: customerData.street || '',
+      area: customerData.area || '',
+      city: customerData.city || '',
+      pincode: customerData.pincode || '',
+      phone: customerData.phone || '',
       isDefault: true,
     };
 
@@ -1697,8 +1242,8 @@ export const AppProvider: React.FC<{
       orderType: finalOrderType,
       tableNumber: finalTable,
       deliveryAddress: deliveryAddressObj,
-      customerName: guestCustomer.name || 'Guest Customer',
-      customerPhone: guestCustomer.phone || '+91 98765 43210',
+      customerName: customerData.name || 'Guest',
+      customerPhone: customerData.phone || '',
       deliveryInstructions,
       specialNotes: options?.specialNotes || guestCustomer.specialNotes,
       cutleryNeeded,
@@ -1725,12 +1270,12 @@ export const AppProvider: React.FC<{
       platformFee,
       tip: finalOrderType === 'delivery' ? deliveryTip : 0,
       grandTotal,
-      status: 'confirmed',
-      createdAt: 'Just now',
+      status: 'placed',
+      createdAt: new Date().toISOString(),
       orderType: finalOrderType,
       tableNumber: finalTable,
-      customerName: guestCustomer.name,
-      customerPhone: guestCustomer.phone,
+      customerName: customerData.name || 'Guest',
+      customerPhone: customerData.phone || '-',
       estimatedDeliveryTime:
         scheduledDelivery !== 'now'
           ? scheduledDelivery
@@ -1748,33 +1293,21 @@ export const AppProvider: React.FC<{
       whatsappOrderUrl: whatsappUrl,
     };
 
-    setActiveOrder(newOrder);
     const updatedOrders = [newOrder, ...pastOrders];
-    setPastOrders(() => {
-      try { localStorage.setItem('gumti_past_orders', JSON.stringify(updatedOrders)); } catch { }
-      return updatedOrders;
-    });
+    // Persist first so a failed Firebase write never looks like a placed order.
+    await saveRestaurantCloudData({ orders: updatedOrders });
+    setActiveOrder(newOrder);
+    setPastOrders(updatedOrders);
     setCart([]);
     setAppliedCoupon(null);
-
-    // Directly push the new order to Firebase immediately.
-    // This bypasses the reactive useEffect (which can be blocked by skipFirebaseSyncRef)
-    // and guarantees the order appears in the admin panel on live/production.
-    void saveRestaurantCloudData({ orders: updatedOrders }).catch((err: unknown) => {
-      console.warn('Direct order sync to Firebase failed:', err);
-    });
+    try { localStorage.setItem('gumti_active_order_id', orderId); } catch { }
 
     // Save customer info
-    updateGuestCustomer(guestCustomer);
+    updateGuestCustomer(customerData);
 
     // Navigate to order tracking
     setActiveView('order-tracking');
     showToast('Order Created! 📲', 'Opening WhatsApp to send to restaurant', 'success');
-
-    // Open WhatsApp in a clean way
-    if (typeof window !== 'undefined') {
-      window.open(whatsappUrl, '_blank');
-    }
 
     return { orderId, whatsappUrl, message: formattedMessage };
   };
@@ -1830,6 +1363,7 @@ export const AppProvider: React.FC<{
       adminBanners,
     };
   }, [
+    isFirebaseConnected,
     restaurantProfile,
     restaurantMenu,
     pastOrders,
@@ -1845,18 +1379,23 @@ export const AppProvider: React.FC<{
   useEffect(() => {
     const unsubscribe = subscribeToRestaurantCloudData((cloudData) => {
       skipFirebaseSyncRef.current = true;
+      setIsFirebaseConnected(true);
       
       if (cloudData.profile) {
         setRestaurantProfile(cloudData.profile as RestaurantProfile);
         try { localStorage.setItem('gumti_cafe_profile', JSON.stringify(cloudData.profile)); } catch { }
       }
       
-      // Fully dynamic menu: whatever is in Firebase is the single source of truth.
+      // The Firebase document is the only source of menu data.
       const menuData = Array.isArray(cloudData.menu) ? cloudData.menu : [];
       setRestaurantMenu(menuData as MenuItem[]);
       try { localStorage.setItem('gumti_cafe_menu', JSON.stringify(menuData)); } catch { }
       
-      if (cloudData.orders) setPastOrders(cloudData.orders as Order[]);
+      const cloudOrders = Array.isArray(cloudData.orders) ? cloudData.orders as Order[] : [];
+      setPastOrders(cloudOrders);
+      let activeOrderId = '';
+      try { activeOrderId = localStorage.getItem('gumti_active_order_id') || ''; } catch { }
+      setActiveOrder(cloudOrders.find((order) => order.id === activeOrderId && !['delivered', 'cancelled'].includes(order.status)) || null);
       if (cloudData.bookings) setTableBookings(cloudData.bookings as TableBooking[]);
       if (cloudData.bookingConfig) setTableBookingConfig(cloudData.bookingConfig as TableBookingConfig);
       if (cloudData.categories) setAdminCategories(cloudData.categories as string[]);
@@ -1868,8 +1407,8 @@ export const AppProvider: React.FC<{
       firebaseReadyRef.current = true;
       setIsLoadingMenu(false);
     }, (error) => {
-      console.warn('Firebase sync unavailable; continuing with local data.', error.message);
-      firebaseReadyRef.current = true;
+      console.error('Firebase sync unavailable; ordering and cloud changes are disabled.', error.message);
+      setIsFirebaseConnected(false);
       setIsLoadingMenu(false);
     });
 
@@ -1877,7 +1416,7 @@ export const AppProvider: React.FC<{
   }, []);
 
   useEffect(() => {
-    if (!firebaseReadyRef.current) return;
+    if (!firebaseReadyRef.current || !isFirebaseConnected) return;
     if (skipFirebaseSyncRef.current) {
       skipFirebaseSyncRef.current = false;
       return;
@@ -2099,6 +1638,7 @@ export const AppProvider: React.FC<{
         restaurantProfile,
         updateRestaurantProfile,
         isLoadingMenu,
+        isFirebaseConnected,
         restaurantMenu,
         addMenuItem,
         updateMenuItem,

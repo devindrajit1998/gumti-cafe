@@ -145,15 +145,6 @@ export const OrderTrackingView: React.FC = () => {
               <HelpCircle className="w-4 h-4 text-orange-400" />
               <span>Help &amp; Support</span>
             </button>
-
-            {order.status === 'placed' && (
-              <button
-                onClick={() => cancelActiveOrder()}
-                className="px-3.5 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-xs font-bold text-rose-300 border border-rose-500/30 transition-colors"
-              >
-                Cancel Order
-              </button>
-            )}
           </div>
         </div>
       </div>
