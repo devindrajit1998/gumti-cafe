@@ -3,11 +3,25 @@ import crypto from 'crypto';
 
 export const ADMIN_COOKIE_NAME = 'gumti_admin_session';
 
+export function getAdminAuthConfigurationError(): string | null {
+  if (process.env.NODE_ENV !== 'production') return null;
+
+  const missing = [
+    !process.env.ADMIN_USERNAME && 'ADMIN_USERNAME',
+    !process.env.ADMIN_PASSWORD && 'ADMIN_PASSWORD',
+    (!process.env.ADMIN_JWT_SECRET || process.env.ADMIN_JWT_SECRET.length < 32) && 'ADMIN_JWT_SECRET (at least 32 characters)',
+  ].filter(Boolean);
+
+  return missing.length > 0
+    ? `Admin login is not configured for production. Set ${missing.join(', ')} in the deployment environment and redeploy.`
+    : null;
+}
+
 // Secrets & credentials with safe defaults
 const getJwtSecret = () => {
   const secret = process.env.ADMIN_JWT_SECRET;
   if (process.env.NODE_ENV === 'production' && (!secret || secret.length < 32)) {
-    throw new Error('ADMIN_JWT_SECRET must be configured with at least 32 characters in production.');
+    throw new Error(getAdminAuthConfigurationError() || 'Invalid admin signing secret.');
   }
   const signingSecret = secret || 'gumti_fallback_secret_key_2026_cafe_secure';
   return new TextEncoder().encode(signingSecret);
@@ -15,7 +29,7 @@ const getJwtSecret = () => {
 
 export const getExpectedAdminCredentials = () => {
   if (process.env.NODE_ENV === 'production' && (!process.env.ADMIN_USERNAME || !process.env.ADMIN_PASSWORD)) {
-    throw new Error('ADMIN_USERNAME and ADMIN_PASSWORD must be configured in production.');
+    throw new Error(getAdminAuthConfigurationError() || 'Admin credentials are not configured.');
   }
   return {
     username: (process.env.ADMIN_USERNAME || 'admin').trim(),

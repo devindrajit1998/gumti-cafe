@@ -6,6 +6,7 @@ import {
   verifyAdminCredentials,
   createAdminSessionToken,
   getAdminCookieOptions,
+  getAdminAuthConfigurationError,
 } from '@/lib/adminAuth';
 
 function getClientIp(req: NextRequest): string {
@@ -18,6 +19,14 @@ function getClientIp(req: NextRequest): string {
 
 export async function POST(request: NextRequest) {
   try {
+    const configurationError = getAdminAuthConfigurationError();
+    if (configurationError) {
+      return NextResponse.json(
+        { success: false, error: configurationError },
+        { status: 503 }
+      );
+    }
+
     const ip = getClientIp(request);
 
     // 1. Rate Limiting Check
