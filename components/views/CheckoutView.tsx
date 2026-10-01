@@ -73,8 +73,8 @@ export const CheckoutView: React.FC = () => {
     if (cart.length === 0) return '';
 
     return formatOrderForWhatsApp({
-      id: 'ZK-ORDER',
-      orderNumber: 'ZK-XXXXX',
+      id: 'GC-ORDER',
+      orderNumber: 'GC-XXXXX',
       restaurantName: restaurantProfile.name,
       restaurantAddress: `${restaurantProfile.address}, ${restaurantProfile.city}`,
       items: cart,

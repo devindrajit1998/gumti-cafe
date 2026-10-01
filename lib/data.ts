@@ -982,7 +982,7 @@ export const SAMPLE_ADDRESSES: DeliveryAddress[] = [
 export const INITIAL_PAST_ORDERS: Order[] = [
   {
     id: 'order-1001',
-    orderNumber: 'ZK-98421',
+    orderNumber: 'GC-98421',
     restaurantId: 'rest-1',
     restaurantName: 'Nawabi Dum Biryani House',
     restaurantImage: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=300&auto=format&fit=crop&q=80',
@@ -1033,7 +1033,7 @@ export const INITIAL_PAST_ORDERS: Order[] = [
   },
   {
     id: 'order-1002',
-    orderNumber: 'ZK-87114',
+    orderNumber: 'GC-87114',
     restaurantId: 'rest-3',
     restaurantName: 'Dosa Factory & South Express',
     restaurantImage: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=300&auto=format&fit=crop&q=80',

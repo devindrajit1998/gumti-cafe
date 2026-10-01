@@ -51,7 +51,7 @@ function generateDishId(): string {
 let groupOrderCounter = 1000;
 function createNewGroupCode(): string {
   groupOrderCounter += 1;
-  return `ZK-${groupOrderCounter}`;
+  return `GC-${groupOrderCounter}`;
 }
 
 let bannerCounter = 0;
@@ -573,7 +573,7 @@ export const AppProvider: React.FC<{
   const [guestCustomer, setGuestCustomer] = useState<GuestCustomerInfo>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('zaika_guest_customer');
+        const saved = localStorage.getItem('gumti_guest_customer');
         if (saved) return JSON.parse(saved);
       } catch { }
     }
@@ -711,7 +711,7 @@ export const AppProvider: React.FC<{
     setGuestCustomer((prev) => {
       const next = { ...prev, ...info };
       try {
-        localStorage.setItem('zaika_guest_customer', JSON.stringify(next));
+        localStorage.setItem('gumti_guest_customer', JSON.stringify(next));
       } catch (e) {
         console.error(e);
       }
@@ -723,7 +723,7 @@ export const AppProvider: React.FC<{
   const [cart, setCart] = useState<CartItem[]>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('zaika_cart');
+        const saved = localStorage.getItem('gumti_cart');
         if (saved) return JSON.parse(saved);
       } catch {}
     }
@@ -734,7 +734,7 @@ export const AppProvider: React.FC<{
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('zaika_cart', JSON.stringify(cart));
+        localStorage.setItem('gumti_cart', JSON.stringify(cart));
       } catch (e) {
         console.error('Failed to save cart:', e);
       }
@@ -750,14 +750,14 @@ export const AppProvider: React.FC<{
   const [pastOrders, setPastOrders] = useState<Order[]>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('zaika_past_orders');
+        const saved = localStorage.getItem('gumti_past_orders');
         if (saved) return JSON.parse(saved);
       } catch { }
     }
     return [
       {
         id: 'ord-seed-1',
-        orderNumber: 'ZK-94102',
+        orderNumber: 'GC-94102',
         restaurantId: 'my-restaurant',
         restaurantName: DEFAULT_RESTAURANT_PROFILE.name,
         restaurantImage: DEFAULT_RESTAURANT_PROFILE.logoImage,
@@ -813,7 +813,7 @@ export const AppProvider: React.FC<{
       },
       {
         id: 'ord-seed-2',
-        orderNumber: 'ZK-94101',
+        orderNumber: 'GC-94101',
         restaurantId: 'my-restaurant',
         restaurantName: DEFAULT_RESTAURANT_PROFILE.name,
         restaurantImage: DEFAULT_RESTAURANT_PROFILE.logoImage,
@@ -870,7 +870,7 @@ export const AppProvider: React.FC<{
       },
       {
         id: 'ord-seed-3',
-        orderNumber: 'ZK-94098',
+        orderNumber: 'GC-94098',
         restaurantId: 'my-restaurant',
         restaurantName: DEFAULT_RESTAURANT_PROFILE.name,
         restaurantImage: DEFAULT_RESTAURANT_PROFILE.logoImage,
@@ -920,7 +920,7 @@ export const AppProvider: React.FC<{
     setPastOrders((prev) => {
       const next = prev.map((ord) => (ord.id === orderId ? { ...ord, status } : ord));
       try {
-        localStorage.setItem('zaika_past_orders', JSON.stringify(next));
+        localStorage.setItem('gumti_past_orders', JSON.stringify(next));
       } catch (e) {
         console.error(e);
       }
@@ -936,7 +936,7 @@ export const AppProvider: React.FC<{
     setPastOrders((prev) => {
       const next = prev.filter((ord) => ord.id !== orderId);
       try {
-        localStorage.setItem('zaika_past_orders', JSON.stringify(next));
+        localStorage.setItem('gumti_past_orders', JSON.stringify(next));
       } catch (e) {
         console.error(e);
       }
@@ -949,7 +949,7 @@ export const AppProvider: React.FC<{
   const [adminCoupons, setAdminCoupons] = useState<Coupon[]>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('zaika_coupons');
+        const saved = localStorage.getItem('gumti_coupons');
         if (saved) return JSON.parse(saved);
       } catch { }
     }
@@ -960,7 +960,7 @@ export const AppProvider: React.FC<{
     setAdminCoupons((prev) => {
       const next = [coupon, ...prev.filter((c) => c.code !== coupon.code)];
       try {
-        localStorage.setItem('zaika_coupons', JSON.stringify(next));
+        localStorage.setItem('gumti_coupons', JSON.stringify(next));
       } catch (e) {
         console.error(e);
       }
@@ -973,7 +973,7 @@ export const AppProvider: React.FC<{
     setAdminCoupons((prev) => {
       const next = prev.map((c) => (c.code === code ? { ...c, ...updated } : c));
       try {
-        localStorage.setItem('zaika_coupons', JSON.stringify(next));
+        localStorage.setItem('gumti_coupons', JSON.stringify(next));
       } catch (e) {
         console.error(e);
       }
@@ -986,7 +986,7 @@ export const AppProvider: React.FC<{
     setAdminCoupons((prev) => {
       const next = prev.filter((c) => c.code !== code);
       try {
-        localStorage.setItem('zaika_coupons', JSON.stringify(next));
+        localStorage.setItem('gumti_coupons', JSON.stringify(next));
       } catch (e) {
         console.error(e);
       }
@@ -999,7 +999,7 @@ export const AppProvider: React.FC<{
   const [adminCategories, setAdminCategories] = useState<string[]>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('zaika_categories');
+        const saved = localStorage.getItem('gumti_categories');
         if (saved) return JSON.parse(saved);
       } catch { }
     }
@@ -1013,7 +1013,7 @@ export const AppProvider: React.FC<{
       if (prev.includes(trimmed)) return prev;
       const next = [...prev, trimmed];
       try {
-        localStorage.setItem('zaika_categories', JSON.stringify(next));
+        localStorage.setItem('gumti_categories', JSON.stringify(next));
       } catch (e) {
         console.error(e);
       }
@@ -1028,7 +1028,7 @@ export const AppProvider: React.FC<{
     setAdminCategories((prev) => {
       const next = prev.map((c) => (c === oldCat ? trimmed : c));
       try {
-        localStorage.setItem('zaika_categories', JSON.stringify(next));
+        localStorage.setItem('gumti_categories', JSON.stringify(next));
       } catch (e) {
         console.error(e);
       }
@@ -1049,7 +1049,7 @@ export const AppProvider: React.FC<{
     setAdminCategories((prev) => {
       const next = prev.filter((c) => c !== category);
       try {
-        localStorage.setItem('zaika_categories', JSON.stringify(next));
+        localStorage.setItem('gumti_categories', JSON.stringify(next));
       } catch (e) {
         console.error(e);
       }
@@ -1062,7 +1062,7 @@ export const AppProvider: React.FC<{
   const [tableBookingConfig, setTableBookingConfig] = useState<TableBookingConfig>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('zaika_table_booking_config');
+        const saved = localStorage.getItem('gumti_table_booking_config');
         if (saved) return JSON.parse(saved);
       } catch { }
     }
@@ -1073,7 +1073,7 @@ export const AppProvider: React.FC<{
     setTableBookingConfig((prev) => {
       const next = { ...prev, ...updated };
       try {
-        localStorage.setItem('zaika_table_booking_config', JSON.stringify(next));
+        localStorage.setItem('gumti_table_booking_config', JSON.stringify(next));
       } catch (e) {
         console.error(e);
       }
@@ -1085,7 +1085,7 @@ export const AppProvider: React.FC<{
   const [tableBookings, setTableBookings] = useState<TableBooking[]>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('zaika_table_bookings');
+        const saved = localStorage.getItem('gumti_table_bookings');
         if (saved) return JSON.parse(saved);
       } catch { }
     }
@@ -1136,7 +1136,7 @@ export const AppProvider: React.FC<{
       setTableBookings((prev) => {
         const next = [newBooking, ...prev];
         try {
-          localStorage.setItem('zaika_table_bookings', JSON.stringify(next));
+          localStorage.setItem('gumti_table_bookings', JSON.stringify(next));
         } catch (e) {
           console.error(e);
         }
@@ -1164,7 +1164,7 @@ export const AppProvider: React.FC<{
     setTableBookings((prev) => {
       const next = prev.map((b) => (b.id === id ? { ...b, status, ...(tableNumber ? { tableNumber } : {}) } : b));
       try {
-        localStorage.setItem('zaika_table_bookings', JSON.stringify(next));
+        localStorage.setItem('gumti_table_bookings', JSON.stringify(next));
       } catch (e) {
         console.error(e);
       }
@@ -1177,7 +1177,7 @@ export const AppProvider: React.FC<{
     setTableBookings((prev) => {
       const next = prev.filter((b) => b.id !== id);
       try {
-        localStorage.setItem('zaika_table_bookings', JSON.stringify(next));
+        localStorage.setItem('gumti_table_bookings', JSON.stringify(next));
       } catch (e) {
         console.error(e);
       }
@@ -1217,15 +1217,15 @@ export const AppProvider: React.FC<{
       setBannerAnnouncement(backup.announcement);
       if (Array.isArray(backup.banners)) {
         setAdminBanners(backup.banners);
-        localStorage.setItem('zaika_banners', JSON.stringify(backup.banners));
+        localStorage.setItem('gumti_banners', JSON.stringify(backup.banners));
       }
       localStorage.setItem('gumti_cafe_profile', JSON.stringify(backup.profile));
       localStorage.setItem('gumti_cafe_menu', JSON.stringify(backup.menu));
-      localStorage.setItem('zaika_past_orders', JSON.stringify(backup.orders));
-      localStorage.setItem('zaika_categories', JSON.stringify(backup.categories));
-      localStorage.setItem('zaika_coupons', JSON.stringify(backup.coupons));
-      localStorage.setItem('zaika_customers', JSON.stringify(backup.customers));
-      localStorage.setItem('zaika_banner_announcement', JSON.stringify(backup.announcement));
+      localStorage.setItem('gumti_past_orders', JSON.stringify(backup.orders));
+      localStorage.setItem('gumti_categories', JSON.stringify(backup.categories));
+      localStorage.setItem('gumti_coupons', JSON.stringify(backup.coupons));
+      localStorage.setItem('gumti_customers', JSON.stringify(backup.customers));
+      localStorage.setItem('gumti_banner_announcement', JSON.stringify(backup.announcement));
       showToast('Backup restored successfully', 'All restaurant data is now active.', 'success');
       return { success: true };
     } catch (error) {
@@ -1237,7 +1237,7 @@ export const AppProvider: React.FC<{
   const [bannerAnnouncement, setBannerAnnouncement] = useState<BannerAnnouncement>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('zaika_banner_announcement');
+        const saved = localStorage.getItem('gumti_banner_announcement');
         if (saved) return JSON.parse(saved);
       } catch { }
     }
@@ -1248,7 +1248,7 @@ export const AppProvider: React.FC<{
     setBannerAnnouncement((prev) => {
       const next = { ...prev, ...updated };
       try {
-        localStorage.setItem('zaika_banner_announcement', JSON.stringify(next));
+        localStorage.setItem('gumti_banner_announcement', JSON.stringify(next));
       } catch (e) {
         console.error(e);
       }
@@ -1261,13 +1261,13 @@ export const AppProvider: React.FC<{
   const [adminBanners, setAdminBanners] = useState<BannerRecord[]>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('zaika_banners');
+        const saved = localStorage.getItem('gumti_banners');
         if (saved) {
           const parsed = JSON.parse(saved) as BannerRecord[];
           if (Array.isArray(parsed)) return parsed;
         }
         // Migrate legacy announcement banner on first load
-        const legacySaved = localStorage.getItem('zaika_banner_announcement');
+        const legacySaved = localStorage.getItem('gumti_banner_announcement');
         if (legacySaved) {
           const legacy = JSON.parse(legacySaved) as BannerAnnouncement;
           const migrated = migrateLegacyAnnouncement(legacy);
@@ -1283,7 +1283,7 @@ export const AppProvider: React.FC<{
 
   const persistBanners = (banners: BannerRecord[]) => {
     try {
-      localStorage.setItem('zaika_banners', JSON.stringify(banners));
+      localStorage.setItem('gumti_banners', JSON.stringify(banners));
     } catch (e) {
       console.error(e);
     }
@@ -1370,7 +1370,7 @@ export const AppProvider: React.FC<{
   const [adminCustomers, setAdminCustomers] = useState<CustomerRecord[]>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('zaika_customers');
+        const saved = localStorage.getItem('gumti_customers');
         if (saved) return JSON.parse(saved);
       } catch { }
     }
@@ -1381,7 +1381,7 @@ export const AppProvider: React.FC<{
     setAdminCustomers((prev) => {
       const next = [customer, ...prev.filter((c) => c.phone !== customer.phone)];
       try {
-        localStorage.setItem('zaika_customers', JSON.stringify(next));
+        localStorage.setItem('gumti_customers', JSON.stringify(next));
       } catch (e) {
         console.error(e);
       }
@@ -1394,7 +1394,7 @@ export const AppProvider: React.FC<{
     setAdminCustomers((prev) => {
       const next = prev.map((c) => (c.id === id ? { ...c, ...updated } : c));
       try {
-        localStorage.setItem('zaika_customers', JSON.stringify(next));
+        localStorage.setItem('gumti_customers', JSON.stringify(next));
       } catch (e) {
         console.error(e);
       }
@@ -1407,7 +1407,7 @@ export const AppProvider: React.FC<{
     setAdminCustomers((prev) => {
       const next = prev.filter((c) => c.id !== id);
       try {
-        localStorage.setItem('zaika_customers', JSON.stringify(next));
+        localStorage.setItem('gumti_customers', JSON.stringify(next));
       } catch (e) {
         console.error(e);
       }
@@ -1667,7 +1667,7 @@ export const AppProvider: React.FC<{
     const finalTable = options?.overrideTableNumber || tableNumber;
     const targetAdminPhone = options?.customAdminPhone || restaurantProfile.whatsappPhone || DEFAULT_ADMIN_WHATSAPP;
     const orderId = `ord-${Date.now()}`;
-    const orderNum = `ZK-${Math.floor(10000 + Math.random() * 90000)}`;
+    const orderNum = `GC-${Math.floor(10000 + Math.random() * 90000)}`;
 
     const deliveryAddressObj: DeliveryAddress = {
       id: 'guest-addr',
@@ -1749,7 +1749,11 @@ export const AppProvider: React.FC<{
     };
 
     setActiveOrder(newOrder);
-    setPastOrders((prev) => [newOrder, ...prev]);
+    setPastOrders((prev) => {
+      const next = [newOrder, ...prev];
+      try { localStorage.setItem('gumti_past_orders', JSON.stringify(next)); } catch { }
+      return next;
+    });
     setCart([]);
     setAppliedCoupon(null);
 
@@ -1900,45 +1904,7 @@ export const AppProvider: React.FC<{
     adminBanners,
   ]);
 
-  // Live order status ticker
-  useEffect(() => {
-    if (!activeOrder || activeOrder.status === 'delivered' || activeOrder.status === 'cancelled') {
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setActiveOrder((prev) => {
-        if (!prev) return null;
-        const stages: OrderStatus[] = ['placed', 'confirmed', 'preparing', 'on_the_way', 'delivered'];
-        const currentIdx = stages.indexOf(prev.status);
-        if (currentIdx < stages.length - 1) {
-          const nextStatus = stages[currentIdx + 1];
-          const updated = { ...prev, status: nextStatus };
-
-          if (nextStatus === 'preparing') {
-            showToast('Chef is preparing your order 🍳', restaurantProfile.name, 'info');
-          } else if (nextStatus === 'on_the_way') {
-            showToast(
-              prev.orderType === 'dine_in'
-                ? 'Order arriving at your Table! 🍽️'
-                : prev.orderType === 'pickup'
-                  ? 'Order is ready for pickup! 🛍️'
-                  : 'Delivery partner on the way! 🛵',
-              undefined,
-              'info'
-            );
-          } else if (nextStatus === 'delivered') {
-            showToast('Order Completed! ✨ Enjoy your meal!', undefined, 'success');
-          }
-
-          return updated;
-        }
-        return prev;
-      });
-    }, 18000);
-
-    return () => clearTimeout(timer);
-  }, [activeOrder, showToast, restaurantProfile.name]);
+  // Automatic live order status ticker removed for production
 
   // Search & Navigation
   const addRecentSearch = (term: string) => {

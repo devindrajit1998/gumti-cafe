@@ -45,7 +45,7 @@ export default function AdminSettingsPage() {
   const handleExport = () => {
     const blob = new Blob([JSON.stringify(exportFullDatabase(), null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = `zaika_backup_${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(url);
+    const a = document.createElement('a'); a.href = url; a.download = `gumti_backup_${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(url);
     showToast('Backup exported! 💾', 'JSON file downloaded.', 'success');
   };
 

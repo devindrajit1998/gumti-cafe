@@ -146,7 +146,7 @@ export const GroupOrderModal: React.FC = () => {
                     type="text"
                     value={inputCode}
                     onChange={(e) => setInputCode(e.target.value)}
-                    placeholder="Group Code (e.g. ZK-4821)"
+                    placeholder="Group Code (e.g. GC-4821)"
                     className="text-xs font-semibold px-3 py-2.5 rounded-xl border border-zinc-200 bg-white uppercase focus:outline-hidden focus:border-blue-600"
                   />
                   <input

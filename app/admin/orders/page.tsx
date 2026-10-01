@@ -56,6 +56,25 @@ export default function AdminOrdersPage() {
     window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
+  const sendWhatsAppInvoice = (order: (typeof pastOrders)[0]) => {
+    let msg = `======================\n🍽️ ${restaurantProfile.name.toUpperCase()} 🍽️\n======================\n`;
+    msg += `Order ID: ${order.orderNumber}\nName: ${order.customerName || 'Guest'}\nType: ${order.orderType}\n`;
+    if (order.tableNumber) msg += `Table: ${order.tableNumber}\n`;
+    msg += `======================\n`;
+    order.items.forEach((item) => {
+      msg += `${item.quantity}x ${item.name} - ₹${item.price * item.quantity}\n`;
+    });
+    msg += `======================\n`;
+    msg += `Subtotal: ₹${order.items.reduce((acc, it) => acc + (it.price * it.quantity), 0)}\n`;
+    const tax = order.grandTotal - order.items.reduce((acc, it) => acc + (it.price * it.quantity), 0);
+    if (tax > 0) msg += `Taxes & Fees: ₹${tax.toFixed(0)}\n`;
+    msg += `*Total Paid: ₹${order.grandTotal}*\n`;
+    msg += `Payment: ${order.paymentMethod}\n`;
+    msg += `======================\n`;
+    msg += `Thank you for choosing ${restaurantProfile.name}! Have a great day!`;
+    sendWhatsApp(order, msg);
+  };
+
   const statusColors: Record<OrderStatus, { bg: string; text: string; label: string }> = {
     placed: { bg: 'bg-amber-50 border-amber-200', text: 'text-amber-700', label: 'Placed / Received' },
     confirmed: { bg: 'bg-blue-50 border-blue-200', text: 'text-blue-700', label: 'Confirmed' },
@@ -213,22 +232,16 @@ export default function AdminOrdersPage() {
                       <MessageCircle className="w-3.5 h-3.5" />
                       Ready
                     </button>
-                  </div>
-                  <div className="flex gap-1.5">
                     <button
-                      onClick={() => { setViewingInvoiceOrder(order); setIsKOTModalOpen(true); }}
-                      title="Print KOT"
-                      className="p-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-xl"
-                    >
-                      <Printer className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => { setViewingInvoiceOrder(order); setIsInvoiceModalOpen(true); }}
-                      title="View Invoice"
-                      className="p-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-xl"
+                      onClick={() => sendWhatsAppInvoice(order)}
+                      className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-[11px] font-black flex items-center gap-1"
                     >
                       <FileText className="w-3.5 h-3.5" />
+                      Invoice
                     </button>
+                  </div>
+                  <div className="flex gap-1.5">
+
                     <button
                       onClick={() => deleteOrder(order.id)}
                       title="Delete Order"
