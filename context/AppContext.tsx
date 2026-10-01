@@ -917,30 +917,30 @@ export const AppProvider: React.FC<{
   });
 
   const updateOrderStatus = (orderId: string, status: OrderStatus) => {
-    setPastOrders((prev) => {
-      const next = prev.map((ord) => (ord.id === orderId ? { ...ord, status } : ord));
-      try {
-        localStorage.setItem('gumti_past_orders', JSON.stringify(next));
-      } catch (e) {
-        console.error(e);
-      }
-      return next;
+    const updatedOrders = pastOrders.map((ord) => (ord.id === orderId ? { ...ord, status } : ord));
+    setPastOrders(() => {
+      try { localStorage.setItem('gumti_past_orders', JSON.stringify(updatedOrders)); } catch (e) { console.error(e); }
+      return updatedOrders;
     });
     if (activeOrder && activeOrder.id === orderId) {
       setActiveOrder((prev) => (prev ? { ...prev, status } : null));
     }
+    // Directly push to Firebase so the customer tracking page updates in real-time
+    void saveRestaurantCloudData({ orders: updatedOrders }).catch((err: unknown) => {
+      console.warn('Direct status sync to Firebase failed:', err);
+    });
     showToast(`Order Status Updated: ${status.toUpperCase()} 🔄`, `Order ID: ${orderId}`, 'success');
   };
 
   const deleteOrder = (orderId: string) => {
-    setPastOrders((prev) => {
-      const next = prev.filter((ord) => ord.id !== orderId);
-      try {
-        localStorage.setItem('gumti_past_orders', JSON.stringify(next));
-      } catch (e) {
-        console.error(e);
-      }
-      return next;
+    const updatedOrders = pastOrders.filter((ord) => ord.id !== orderId);
+    setPastOrders(() => {
+      try { localStorage.setItem('gumti_past_orders', JSON.stringify(updatedOrders)); } catch (e) { console.error(e); }
+      return updatedOrders;
+    });
+    // Directly push to Firebase so admin panel stays in sync
+    void saveRestaurantCloudData({ orders: updatedOrders }).catch((err: unknown) => {
+      console.warn('Direct delete sync to Firebase failed:', err);
     });
     showToast('Order Deleted from Logs 🗑️', undefined, 'info');
   };
@@ -1749,13 +1749,20 @@ export const AppProvider: React.FC<{
     };
 
     setActiveOrder(newOrder);
-    setPastOrders((prev) => {
-      const next = [newOrder, ...prev];
-      try { localStorage.setItem('gumti_past_orders', JSON.stringify(next)); } catch { }
-      return next;
+    const updatedOrders = [newOrder, ...pastOrders];
+    setPastOrders(() => {
+      try { localStorage.setItem('gumti_past_orders', JSON.stringify(updatedOrders)); } catch { }
+      return updatedOrders;
     });
     setCart([]);
     setAppliedCoupon(null);
+
+    // Directly push the new order to Firebase immediately.
+    // This bypasses the reactive useEffect (which can be blocked by skipFirebaseSyncRef)
+    // and guarantees the order appears in the admin panel on live/production.
+    void saveRestaurantCloudData({ orders: updatedOrders }).catch((err: unknown) => {
+      console.warn('Direct order sync to Firebase failed:', err);
+    });
 
     // Save customer info
     updateGuestCustomer(guestCustomer);
