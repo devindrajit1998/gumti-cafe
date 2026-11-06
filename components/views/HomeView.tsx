@@ -23,20 +23,13 @@ import {
 import { MenuItem, BannerRecord, isBannerActive } from '@/lib/types';
 import { generateWhatsAppUrl } from '@/lib/whatsapp';
 
-const CATEGORY_IMAGES: Record<string, string> = {
-  Coffee: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=300&auto=format&fit=crop',
-  Tea: 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?q=80&w=300&auto=format&fit=crop',
-  Burger: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=300&auto=format&fit=crop',
-  Sandwich: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?q=80&w=300&auto=format&fit=crop',
-  Pizzas: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=300&auto=format&fit=crop',
-  Momo: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?q=80&w=300&auto=format&fit=crop',
-  'Noodles / Combos': 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?q=80&w=300&auto=format&fit=crop',
-  'Small Bites': 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?q=80&w=300&auto=format&fit=crop',
-  'Mutton Magic on Your Plate': 'https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=300&auto=format&fit=crop',
-  Soup: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?q=80&w=300&auto=format&fit=crop',
-  'Shake / Coolers': 'https://images.unsplash.com/photo-1544145945-f90425340c7e?q=80&w=300&auto=format&fit=crop',
+const CATEGORY_ICONS: Record<string, string> = {
+  Coffee: '☕', Tea: '🍵', Burgers: '🍔', Sandwiches: '🥪', Pizzas: '🍕',
+  Momo: '🥟', Noodles: '🍜', Combos: '🍱', 'Veg Snacks': '🥗',
+  'Non-Veg Snacks': '🍗', 'Chinese Main Course': '🥢', 'Fried Rice': '🍚',
+  'Cafe Specials': '🍽️', Soup: '🥣', Shakes: '🥤', Extras: '🧃',
+  Coolers: '🍹', 'Mutton Magic on Your Plate': '🍖',
 };
-const CATEGORY_ICONS: Record<string, string> = { Coffee: '☕', Tea: '🍵', Burger: '🍔', Sandwich: '🥪', Pizzas: '🍕', Momo: '🥟', 'Noodles / Combos': '🍜', 'Small Bites': '🍢', 'Mutton Magic on Your Plate': '🍖', Soup: '🥣', 'Shake / Coolers': '🍹' };
 
 const HERO_THEME_GRADIENTS: Record<string, string> = {
   orange: 'from-amber-600 via-orange-600 to-rose-600',
@@ -540,12 +533,12 @@ export const HomeView: React.FC = () => {
             className="w-full flex items-center gap-4 sm:gap-6 overflow-x-auto no-scrollbar scroll-smooth px-8 sm:px-10 py-1"
           >
             {[
-              { id: 'All', name: 'All Dishes', icon: '🍽️', image: CATEGORY_IMAGES.Coffee },
+              { id: 'All', name: 'All Dishes', icon: '🍽️', image: '' },
               ...Array.from(new Set(restaurantMenu.map((item) => item.category))).map((category) => ({
                 id: category,
                 name: category,
                 icon: CATEGORY_ICONS[category] || '🍽️',
-                image: CATEGORY_IMAGES[category] || CATEGORY_IMAGES.Coffee,
+                image: restaurantMenu.find((item) => item.category === category && item.image?.startsWith('https://ik.imagekit.io/'))?.image || '',
               })),
             ].map((cat, idx) => {
               const isSelected = (!selectedCategory && cat.id === 'All') || selectedCategory === cat.id;
@@ -562,11 +555,21 @@ export const HomeView: React.FC = () => {
                       : 'border-[#E9C5A7] bg-[#FFFDF9] group-hover:border-[#7C203A]'
                       }`}
                   >
-                    <img
-                      src={cat.image}
-                      alt={cat.name}
-                      className="w-full h-full rounded-full object-cover pointer-events-none"
-                    />
+                    {cat.image ? (
+                      <img
+                        src={cat.image}
+                        alt={cat.name}
+                        className="w-full h-full rounded-full object-cover pointer-events-none"
+                      />
+                    ) : (
+                      <span
+                        role="img"
+                        aria-label={cat.name}
+                        className="w-full h-full rounded-full bg-[#F8EBDD] flex items-center justify-center text-3xl pointer-events-none"
+                      >
+                        {cat.icon}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="text-xs">{cat.icon}</span>
